@@ -1,15 +1,17 @@
-package com.casamento.TuaniJoao.Model.Repository;
+package com.casamento.TuaniJoao.Model.Entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import lombok.NoArgsConstructor;
 
 @Data
 @Entity()
 @Table(name = "guests")
 @AllArgsConstructor
+@NoArgsConstructor
 public class Guest {
 
     @Id

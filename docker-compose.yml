@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  # 1. Nosso Banco de Dados PostgreSQL
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: casamento-db
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME:-casamentodb}
+      POSTGRES_USER: ${DB_USER:-tuani_joao_local}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-senha_de_teste}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # 2. Nossa Aplicação Spring Boot
+  backend-app:
+    # O "build: ." diz para o Compose ler o Dockerfile que está na mesma pasta
+    build: .
+    container_name: casamento-backend
+    restart: always
+    # O backend depende do banco, então só sobe depois que o banco iniciar
+    depends_on:
+      - postgres-db
+    ports:
+      - "8080:8080"
+    environment:
+      # Passamos as variáveis do .env para dentro do contêiner Java
+      DB_HOST: postgres-db # O nome do host passa a ser o nome do serviço do banco acima!
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-casamentodb}
+      DB_USER: ${DB_USER:-tuani_joao_local}
+      DB_PASSWORD: ${DB_PASSWORD:-senha_de_teste}
+    volumes:
+      # Cria aquele volume para salvar as fotos do FileStorageService permanentemente
+      - app_uploads:/app/uploads
+
+volumes:
+  postgres_data:
+  app_uploads:

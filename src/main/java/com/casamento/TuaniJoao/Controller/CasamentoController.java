@@ -1,24 +1,15 @@
 package com.casamento.TuaniJoao.Controller;
 
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestMapping;
 
-@RestController
+@Controller
+@RequestMapping("/admin")
 public class CasamentoController {
 
-    @GetMapping("/")
-    public String home() {
-        return "bem vindo ao casamento dos caebcas";
+    @GetMapping
+    public String adminPage() {
+        return "admin";
     }
-
-    @GetMapping("/info")
-    public String info() {
-        return "info";
-    }
-
-    @GetMapping("/confirmacao")
-    public String confirmarPresenca() {
-        return "confirmar presenca";
-    }
-
 }

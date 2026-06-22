@@ -1,0 +1,20 @@
+body {
+    background-color: #f8f9fa;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.nav-tabs .nav-link.active {
+    background-color: #ffffff;
+    font-weight: bold;
+}
+
+.preview-img {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 4px;
+}

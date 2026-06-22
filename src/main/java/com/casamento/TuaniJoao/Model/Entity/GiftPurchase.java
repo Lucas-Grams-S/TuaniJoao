@@ -1,6 +1,5 @@
 package com.casamento.TuaniJoao.Model.Entity;
 
-import com.casamento.TuaniJoao.Model.Repository.Guest;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
