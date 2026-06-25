@@ -99,29 +99,41 @@ function renderTable() {
 }
 
 // 5. FUNÇÃO: Envia a lista JSON completa para persistência em lote no banco de dados (API)
+// ATUALIZADO: Tratamento seguro dos botões
 function saveGiftsBatch() {
     const btnSave = document.getElementById('btnSaveBatch');
+    const batchCountSpan = document.getElementById('batchCount');
+
+    // Desativa o botão e coloca um ícone de carregamento no lugar do número
     btnSave.disabled = true;
-    btnSave.innerText = 'Processando...';
+    batchCountSpan.innerText = '⏳';
 
     fetch('/api/gifts/batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(stagedGifts)
     })
-    .then(response => {
-        if (!response.ok) throw new Error('Erro ao salvar o lote');
+    .then(async response => {
+        if (!response.ok) {
+            const text = await response.text();
+            try {
+                const errJson = JSON.parse(text);
+                throw new Error(errJson.message);
+            } catch(e) {
+                throw new Error(text || 'Falha desconhecida no servidor.');
+            }
+        }
         return response.json();
     })
     .then(data => {
         alert(`Sucesso! ${data.length} presentes salvos e disponíveis no catálogo oficial.`);
         stagedGifts = []; // Limpa o lote da memória
-        renderTable();
+        renderTable(); // A renderTable já tem a inteligência de restaurar os botões e textos
     })
     .catch(error => {
-        alert(error.message);
+        alert('Aviso: ' + error.message);
         btnSave.disabled = false;
-        renderTable();
+        renderTable(); // Restaura o botão em caso de erro
     });
 }
 
