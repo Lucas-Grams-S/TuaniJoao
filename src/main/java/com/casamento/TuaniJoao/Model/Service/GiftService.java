@@ -15,6 +15,15 @@ public class GiftService {
 
     private final GiftRepository repository;
 
+    public Gift findById(Long id) {
+        log.info("Buscando presente com ID: {}", id);
+        return repository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("Presente não encontrado com ID: {}", id);
+                    return new ResourceNotFoundException("Presente não encontrado com o ID: " + id);
+                });
+    }
+
     /**
      * Retorna a lista de presentes para exibir na tela do usuário.
      */

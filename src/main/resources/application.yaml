@@ -2,6 +2,9 @@ spring:
   application:
     name: TuaniJoao
 
+  mercadopago:
+    access-token: ${MP_ACCESS_TOKEN:chave_falsa_local}
+
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:casamentodb}
     username: ${DB_USER:tuani_joao_local}

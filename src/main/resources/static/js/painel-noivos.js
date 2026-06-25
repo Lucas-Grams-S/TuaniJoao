@@ -183,4 +183,55 @@ function showAlert(message, bootstrapClass) {
     alertBox.className = `alert ${bootstrapClass} mt-3`;
     alertBox.innerText = message;
     alertBox.classList.remove('d-none');
+
+    // ==========================================
+    // MÓDULO DE PAGAMENTOS (TESTES)
+    // ==========================================
+
+    // 7. FUNÇÃO: Dispara a geração do Pix no Backend e abre o Modal
+    function gerarPix(giftId, btnElement) {
+        const textoOriginal = btnElement.innerHTML;
+
+        // Deixa o botão em estado de "carregando" para o usuário não clicar duas vezes
+        btnElement.innerHTML = '⏳ Aguarde...';
+        btnElement.disabled = true;
+
+        // Chama a nossa API de pagamentos passando o ID do presente
+        fetch(`/api/payments/pix/${giftId}`, {
+            method: 'POST'
+        })
+        .then(async response => {
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || 'Erro ao gerar o Pix.');
+            return data;
+        })
+        .then(data => {
+            // O Mercado Pago devolve o QR Code em Base64 (texto). Nós transformamos em imagem!
+            document.getElementById('pixQrCodeImg').src = 'data:image/png;base64,' + data.qrCodeBase64;
+
+            // Coloca o texto Copia e Cola no input
+            document.getElementById('pixCopiaCola').value = data.qrCodeCopiaECola;
+
+            // Chama o Bootstrap para exibir a janela Modal flutuante na tela
+            const pixModal = new bootstrap.Modal(document.getElementById('pixModal'));
+            pixModal.show();
+        })
+        .catch(error => {
+            alert('Falha na comunicação com o Mercado Pago: ' + error.message);
+        })
+        .finally(() => {
+            // Restaura o botão ao normal, quer tenha dado erro ou sucesso
+            btnElement.innerHTML = textoOriginal;
+            btnElement.disabled = false;
+        });
+    }
+
+    // 8. FUNÇÃO: Copia o código Pix para a área de transferência do usuário
+    function copiarPix() {
+        const inputPix = document.getElementById('pixCopiaCola');
+        inputPix.select();
+        inputPix.setSelectionRange(0, 99999); // Suporte extra para dispositivos mobile
+        navigator.clipboard.writeText(inputPix.value);
+        alert("Copiado com sucesso! Agora é só colar no app do banco.");
+    }
 }
