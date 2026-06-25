@@ -1,5 +1,6 @@
 package com.casamento.TuaniJoao.Model.Service;
 
+import com.mercadopago.client.common.IdentificationRequest;
 import com.mercadopago.client.payment.PaymentClient;
 import com.mercadopago.client.payment.PaymentCreateRequest;
 import com.mercadopago.client.payment.PaymentPayerRequest;
@@ -14,21 +15,27 @@ import java.math.BigDecimal;
 public class MercadoPagoService {
 
     public Payment gerarPagamentoPix(String nomePresente, BigDecimal valor) throws MPException, MPApiException {
-        // O "Client" é o carteiro do Mercado Pago que envia a nossa carta
         PaymentClient client = new PaymentClient();
 
-        // Aqui nós montamos a carta (A requisição de pagamento)
+        // Truque para o Mercado Pago não achar que você está comprando de si mesmo
+        String emailDinamico = "convidado_" + System.currentTimeMillis() + "@teste.com";
+
         PaymentCreateRequest request = PaymentCreateRequest.builder()
-                .transactionAmount(valor) // Valor real do presente
+                .transactionAmount(valor)
                 .description("Presente de Casamento: " + nomePresente)
-                .paymentMethodId("pix") // Define que queremos Pix e não boleto/cartão
+                .paymentMethodId("pix")
                 .payer(PaymentPayerRequest.builder()
-                        .email("convidado_teste@gmail.com") // Em testes, o MP exige um e-mail válido no formato
+                        .email(emailDinamico)
                         .firstName("Convidado")
+                        .lastName("Teste")
+                        // REGRA DO PIX: Identificação (CPF) é obrigatória!
+                        .identification(IdentificationRequest.builder()
+                                .type("CPF")
+                                .number("19119119100") // CPF genérico aceito no ambiente de testes
+                                .build())
                         .build())
                 .build();
 
-        // Envia para o Mercado Pago e recebe a resposta completa (com o QR Code)
         return client.create(request);
     }
 }

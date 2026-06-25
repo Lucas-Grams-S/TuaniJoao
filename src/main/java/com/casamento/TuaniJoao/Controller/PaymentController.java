@@ -49,10 +49,16 @@ public class PaymentController {
             PixResponseDTO response = new PixResponseDTO(paymentId, copiaECola, base64, status);
             return ResponseEntity.ok(response);
 
+        } catch (com.mercadopago.exceptions.MPApiException apiException) {
+            String detalhesErro = apiException.getApiResponse().getContent();
+            log.error("❌ O Mercado Pago recusou o pagamento. Motivo exato: {}", detalhesErro);
+            return ResponseEntity.status(400).body(Map.of(
+                    "message", "O Mercado Pago recusou a transação. Verifique o terminal para detalhes."
+            ));
         } catch (Exception e) {
-            log.error("❌ Erro crítico ao processar pagamento Pix: ", e);
+            log.error("❌ Erro interno no servidor: ", e);
             return ResponseEntity.status(500).body(Map.of(
-                    "message", "Erro ao comunicar com o Mercado Pago: " + e.getMessage()
+                    "message", "Erro ao comunicar com o servidor de pagamentos."
             ));
         }
     }
