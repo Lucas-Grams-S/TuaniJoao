@@ -19,19 +19,19 @@ public class CasamentoController {
 
     @GetMapping
     public String adminPage() {
-        return "admin";
+        return "painel-noivos";
     }
 
     @GetMapping("/gifts")
     public String listGifts(Model model) {
         model.addAttribute("gifts", giftService.findAllGifts());
-        return "admin-list-gifts";
+        return "painel-noivos-list-gifts";
     }
 
     @GetMapping("/guests")
     public String listGuests(Model model) {
         model.addAttribute("guests", guestService.findAll());
-        return "admin-list-guests";
+        return "painel-noivos-list-guests";
     }
 
 }
