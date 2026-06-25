@@ -1,5 +1,6 @@
 package com.casamento.TuaniJoao.Model.Service;
 
+import com.casamento.TuaniJoao.Model.Dto.CardPaymentDTO;
 import com.casamento.TuaniJoao.Model.Dto.GuestPaymentDTO;
 import com.mercadopago.client.common.IdentificationRequest;
 import com.mercadopago.client.payment.PaymentClient;
@@ -31,6 +32,31 @@ public class MercadoPagoService {
                         .identification(IdentificationRequest.builder()
                                 .type("CPF")
                                 .number(cleanCpf) // CPF limpo
+                                .build())
+                        .build())
+                .build();
+
+        return client.create(request);
+    }
+
+    // Método para Cartão de Crédito
+    public Payment gerarPagamentoCartao(String nomePresente, BigDecimal valor, CardPaymentDTO cardInfo) throws MPException, MPApiException {
+        PaymentClient client = new PaymentClient();
+
+        String cleanCpf = cardInfo.getCpf().replaceAll("[^0-9]", "");
+
+        PaymentCreateRequest request = PaymentCreateRequest.builder()
+                .transactionAmount(valor)
+                .description("Presente de Casamento: " + nomePresente)
+                .paymentMethodId(cardInfo.getPaymentMethodId()) // Bandeira (Visa, Master)
+                .token(cardInfo.getToken())                     // Token de segurança
+                .installments(cardInfo.getInstallments())       // Parcelas
+                .payer(PaymentPayerRequest.builder()
+                        .email(cardInfo.getEmail())
+                        .firstName(cardInfo.getName())
+                        .identification(IdentificationRequest.builder()
+                                .type("CPF")
+                                .number(cleanCpf)
                                 .build())
                         .build())
                 .build();

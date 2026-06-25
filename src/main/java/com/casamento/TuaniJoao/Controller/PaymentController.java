@@ -1,5 +1,6 @@
 package com.casamento.TuaniJoao.Controller;
 
+import com.casamento.TuaniJoao.Model.Dto.CardPaymentDTO;
 import com.casamento.TuaniJoao.Model.Dto.GuestPaymentDTO;
 import com.casamento.TuaniJoao.Model.Dto.PixResponseDTO;
 import com.casamento.TuaniJoao.Model.Entity.Gift;
@@ -60,6 +61,41 @@ public class PaymentController {
             log.error("❌ Erro interno no servidor: ", e);
             return ResponseEntity.status(500).body(Map.of(
                     "message", "Erro ao comunicar com o servidor de pagamentos."
+            ));
+        }
+    }
+
+    @PostMapping("/credit-card/{giftId}")
+    public ResponseEntity<?> criarPagamentoCartao(@PathVariable Long giftId, @RequestBody CardPaymentDTO cardInfo) {
+        try {
+            log.info("💳 Processando Cartão para o presente ID {}. Pagador: {}", giftId, cardInfo.getName());
+
+            Gift gift = giftService.findById(giftId);
+            if (gift == null) {
+                return ResponseEntity.status(404).body(Map.of("message", "Presente não encontrado no catálogo."));
+            }
+
+            Payment payment = mercadoPagoService.gerarPagamentoCartao(gift.getName(), gift.getPrice(), cardInfo);
+
+            log.info("✅ Resposta do Cartão recebida! Status: {}", payment.getStatus());
+
+            // Devolve o status ("approved", "rejected", "in_process") e os detalhes
+            return ResponseEntity.ok(Map.of(
+                    "status", payment.getStatus(),
+                    "statusDetail", payment.getStatusDetail(),
+                    "paymentId", payment.getId()
+            ));
+
+        } catch (com.mercadopago.exceptions.MPApiException apiException) {
+            String detalhesErro = apiException.getApiResponse().getContent();
+            log.error("❌ O Mercado Pago recusou o cartão. Motivo: {}", detalhesErro);
+            return ResponseEntity.status(400).body(Map.of(
+                    "message", "Pagamento recusado. Verifique os dados do cartão."
+            ));
+        } catch (Exception e) {
+            log.error("❌ Erro interno no servidor (Cartão): ", e);
+            return ResponseEntity.status(500).body(Map.of(
+                    "message", "Erro interno ao processar o cartão."
             ));
         }
     }

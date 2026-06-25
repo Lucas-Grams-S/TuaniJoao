@@ -222,6 +222,100 @@ function confirmarDadosEGerarPix() {
     });
 }
 
+// ==========================================
+// MÓDULO DE PAGAMENTO: CARTÃO DE CRÉDITO
+// ==========================================
+
+// Inicializa o Mercado Pago com a sua CHAVE PÚBLICA (Public Key)
+// Substitua pela sua chave pública que começa por TEST-
+const mp = new MercadoPago('TEST-83921b7f-5e2a-40f2-b7f7-44ab671f6299', {
+    locale: 'pt-BR' // Mantemos pt-BR para o formato de CPF e Cartões brasileiros funcionarem bem
+});
+const bricksBuilder = mp.bricks();
+let cardPaymentBrickController;
+
+function abrirModalCartao(giftId, price) {
+    document.getElementById('modalCartaoGiftId').value = giftId;
+    document.getElementById('guestCartaoMessage').value = '';
+
+    const modal = new bootstrap.Modal(document.getElementById('modalCartao'));
+    modal.show();
+
+    renderCardPaymentBrick(price);
+}
+
+const renderCardPaymentBrick = async (amount) => {
+    const settings = {
+        initialization: {
+            amount: amount, // Valor do presente
+        },
+        callbacks: {
+            onReady: () => {
+                // O formulário está pronto no ecrã
+                console.log("Formulário de cartão carregado.");
+            },
+            onSubmit: (cardFormData) => {
+                // Quando o utilizador clica em "Pagar", o MP intercepta, encripta e devolve os dados aqui
+                return processarPagamentoCartao(cardFormData);
+            },
+            onError: (error) => {
+                alert("Erro no formulário de pagamento: " + error.message);
+            },
+        },
+    };
+
+    // Previne que o formulário seja renderizado duas vezes se fechar e abrir o modal
+    if (cardPaymentBrickController) {
+        cardPaymentBrickController.unmount();
+    }
+
+    cardPaymentBrickController = await bricksBuilder.create(
+        "cardPayment",
+        "cardPaymentBrick_container",
+        settings
+    );
+};
+
+function processarPagamentoCartao(cardFormData) {
+    return new Promise((resolve, reject) => {
+        const giftId = document.getElementById('modalCartaoGiftId').value;
+        const mensagem = document.getElementById('guestCartaoMessage').value.trim();
+
+        // Mapeia os dados devolvidos pelo MP para o nosso DTO do Java
+        const payload = {
+            name: cardFormData.payer.first_name || "Convidado Teste",
+            email: cardFormData.payer.email,
+            cpf: cardFormData.payer.identification.number,
+            message: mensagem,
+            token: cardFormData.token, // O segredo encriptado do cartão!
+            paymentMethodId: cardFormData.payment_method_id,
+            installments: cardFormData.installments
+        };
+
+        fetch(`/api/payments/credit-card/${giftId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(async response => {
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || 'Falha ao processar pagamento.');
+
+            if(data.status === "approved") {
+                alert("🎉 Pagamento Aprovado com Sucesso! O ID da transação é: " + data.paymentId);
+                bootstrap.Modal.getInstance(document.getElementById('modalCartao')).hide();
+                resolve();
+            } else {
+                throw new Error("O pagamento foi registado, mas o status é: " + data.statusDetail);
+            }
+        })
+        .catch(error => {
+            alert('Aviso: ' + error.message);
+            reject(); // Avisa o Brick do Mercado Pago que falhou, para ele restaurar o botão de pagar
+        });
+    });
+}
+
 function copiarPix() {
     const inputPix = document.getElementById('pixCopiaCola');
     inputPix.select();
