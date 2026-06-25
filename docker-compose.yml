@@ -33,6 +33,7 @@ services:
       DB_NAME: ${DB_NAME:-casamentodb}
       DB_USER: ${DB_USER:-tuani_joao_local}
       DB_PASSWORD: ${DB_PASSWORD:-senha_de_teste}
+      MP_ACCESS_TOKEN: ${MP_ACCESS_TOKEN}
     volumes:
       # Cria aquele volume para salvar as fotos do FileStorageService permanentemente
       - app_uploads:/app/uploads
