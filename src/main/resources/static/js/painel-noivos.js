@@ -1,7 +1,5 @@
-// Array global que guarda o lote de presentes temporariamente na memória do navegador
 let stagedGifts = [];
 
-// 1. FUNÇÃO: Upload imediato da foto assim que o usuário seleciona o arquivo
 function uploadPhoto(input) {
     const file = input.files[0];
     if (!file) return;
@@ -17,7 +15,6 @@ function uploadPhoto(input) {
     const formData = new FormData();
     formData.append('file', file);
 
-    // Dispara para a nossa API Rest que salva o arquivo físico e retorna o link virtual
     fetch('/api/gifts/photo', {
         method: 'POST',
         body: formData
@@ -30,51 +27,42 @@ function uploadPhoto(input) {
         document.getElementById('giftPhotoUrl').value = photoUrl;
         spinner.classList.add('d-none');
         successText.classList.remove('d-none');
-        btnAdd.disabled = false; // Libera o botão de adicionar à lista
+        btnAdd.disabled = false;
     })
     .catch(error => {
         spinner.classList.add('d-none');
-        alert('Erro ao fazer upload da imagem: ' + error.message);
+        alert('Erro ao fazer upload: ' + error.message);
     });
 }
 
-// 2. FUNÇÃO: Adiciona os dados do formulário na tabela/lista temporária
 function addGiftToList(event) {
     event.preventDefault();
-
     const name = document.getElementById('giftName').value;
     const price = document.getElementById('giftPrice').value;
     const description = document.getElementById('giftDescription').value;
     const photoUrl = document.getElementById('giftPhotoUrl').value;
 
-    // Cria o objeto idêntico à Entidade Java
     const gift = { name, price: parseFloat(price), description, photoUrl };
     stagedGifts.push(gift);
 
-    // Limpa o formulário e reseta estados de upload
     document.getElementById('giftForm').reset();
     document.getElementById('uploadSuccess').classList.add('d-none');
     document.getElementById('btnAddToList').disabled = true;
-
     renderTable();
 }
 
-// 3. FUNÇÃO: Remove um presente específico da lista temporária
 function removeGiftFromList(index) {
     stagedGifts.splice(index, 1);
     renderTable();
 }
 
-// 4. FUNÇÃO: Renderiza as linhas da tabela de presentes com base no array stagedGifts
 function renderTable() {
     const tbody = document.getElementById('giftsTableBody');
-    tbody.innerHTML = '';
+    if(!tbody) return; // Proteção para telas que não têm a tabela
 
+    tbody.innerHTML = '';
     if (stagedGifts.length === 0) {
-        tbody.innerHTML = `
-            <tr id="emptyRow">
-                <td colspan="5" class="text-center text-muted py-4">Nenhum presente adicionado ao lote ainda.</td>
-            </tr>`;
+        tbody.innerHTML = `<tr id="emptyRow"><td colspan="5" class="text-center text-muted py-4">Nenhum presente adicionado ao lote ainda.</td></tr>`;
         document.getElementById('btnSaveBatch').disabled = true;
         document.getElementById('batchCount').innerText = '0';
         return;
@@ -83,7 +71,7 @@ function renderTable() {
     stagedGifts.forEach((gift, index) => {
         const row = `
             <tr>
-                <td><img src="${gift.photoUrl}" class="preview-img" alt="Preview"></td>
+                <td><img src="${gift.photoUrl}" class="preview-img" alt="Preview" style="width:50px; height:50px; object-fit:cover;"></td>
                 <td><strong>${gift.name}</strong></td>
                 <td>R$ ${gift.price.toFixed(2)}</td>
                 <td class="text-truncate" style="max-width: 200px;">${gift.description || '-'}</td>
@@ -98,13 +86,10 @@ function renderTable() {
     document.getElementById('batchCount').innerText = stagedGifts.length;
 }
 
-// 5. FUNÇÃO: Envia a lista JSON completa para persistência em lote no banco de dados (API)
-// ATUALIZADO: Tratamento seguro dos botões
 function saveGiftsBatch() {
     const btnSave = document.getElementById('btnSaveBatch');
     const batchCountSpan = document.getElementById('batchCount');
 
-    // Desativa o botão e coloca um ícone de carregamento no lugar do número
     btnSave.disabled = true;
     batchCountSpan.innerText = '⏳';
 
@@ -114,44 +99,31 @@ function saveGiftsBatch() {
         body: JSON.stringify(stagedGifts)
     })
     .then(async response => {
-        if (!response.ok) {
-            const text = await response.text();
-            try {
-                const errJson = JSON.parse(text);
-                throw new Error(errJson.message);
-            } catch(e) {
-                throw new Error(text || 'Falha desconhecida no servidor.');
-            }
-        }
+        if (!response.ok) throw new Error('Falha no servidor.');
         return response.json();
     })
     .then(data => {
-        alert(`Sucesso! ${data.length} presentes salvos e disponíveis no catálogo oficial.`);
-        stagedGifts = []; // Limpa o lote da memória
-        renderTable(); // A renderTable já tem a inteligência de restaurar os botões e textos
+        alert(`Sucesso! ${data.length} presentes salvos.`);
+        stagedGifts = [];
+        renderTable();
     })
     .catch(error => {
         alert('Aviso: ' + error.message);
         btnSave.disabled = false;
-        renderTable(); // Restaura o botão em caso de erro
+        renderTable();
     });
 }
 
-// 6. FUNÇÃO: Upload e processamento em lote da planilha CSV de convidados
 function uploadCsvGuests() {
     const fileInput = document.getElementById('csvFile');
     const file = fileInput.files[0];
-    const alertBox = document.getElementById('csvAlert');
-
     if (!file) {
-        showAlert('Por favor, selecione um arquivo antes de enviar.', 'alert-danger');
+        showAlert('Selecione um arquivo.', 'alert-danger');
         return;
     }
-
     const formData = new FormData();
     formData.append('file', file);
-
-    showAlert('Processando planilha e salvando convidados...', 'alert-info');
+    showAlert('Processando...', 'alert-info');
 
     fetch('/api/guests/upload-csv', {
         method: 'POST',
@@ -159,79 +131,61 @@ function uploadCsvGuests() {
     })
     .then(async response => {
         const text = await response.text();
-        if (!response.ok) {
-            try {
-                const errJson = JSON.parse(text);
-                throw new Error(errJson.message);
-            } catch(e) {
-                throw new Error(text || 'Falha ao processar o arquivo.');
-            }
-        }
+        if (!response.ok) throw new Error(text || 'Falha no upload.');
         return text;
     })
     .then(message => {
         showAlert('🎉 ' + message, 'alert-success');
-        fileInput.value = ''; // Reseta o campo de arquivo
+        fileInput.value = '';
     })
-    .catch(error => {
-        showAlert('Erro: ' + error.message, 'alert-danger');
-    });
+    .catch(error => showAlert('Erro: ' + error.message, 'alert-danger'));
 }
 
 function showAlert(message, bootstrapClass) {
     const alertBox = document.getElementById('csvAlert');
+    if(!alertBox) return;
     alertBox.className = `alert ${bootstrapClass} mt-3`;
     alertBox.innerText = message;
     alertBox.classList.remove('d-none');
+}
 
-    // ==========================================
-    // MÓDULO DE PAGAMENTOS (TESTES)
-    // ==========================================
+// ==========================================
+// MÓDULO DE PAGAMENTOS (TESTES)
+// ==========================================
 
-    // 7. FUNÇÃO: Dispara a geração do Pix no Backend e abre o Modal
-    function gerarPix(giftId, btnElement) {
-        const textoOriginal = btnElement.innerHTML;
+function gerarPix(giftId, btnElement) {
+    const textoOriginal = btnElement.innerHTML;
+    btnElement.innerHTML = '⏳ Aguarde...';
+    btnElement.disabled = true;
 
-        // Deixa o botão em estado de "carregando" para o usuário não clicar duas vezes
-        btnElement.innerHTML = '⏳ Aguarde...';
-        btnElement.disabled = true;
+    fetch(`/api/payments/pix/${giftId}`, {
+        method: 'POST'
+    })
+    .then(async response => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Erro crítico ao gerar o Pix.');
+        return data;
+    })
+    .then(data => {
+        document.getElementById('pixQrCodeImg').src = 'data:image/png;base64,' + data.qrCodeBase64;
+        document.getElementById('pixCopiaCola').value = data.qrCodeCopiaECola;
+        const pixModalElement = document.getElementById('pixModal');
+        const pixModal = new bootstrap.Modal(pixModalElement);
+        pixModal.show();
+    })
+    .catch(error => {
+        alert('Falha na comunicação com o Mercado Pago: ' + error.message);
+    })
+    .finally(() => {
+        btnElement.innerHTML = textoOriginal;
+        btnElement.disabled = false;
+    });
+}
 
-        // Chama a nossa API de pagamentos passando o ID do presente
-        fetch(`/api/payments/pix/${giftId}`, {
-            method: 'POST'
-        })
-        .then(async response => {
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'Erro ao gerar o Pix.');
-            return data;
-        })
-        .then(data => {
-            // O Mercado Pago devolve o QR Code em Base64 (texto). Nós transformamos em imagem!
-            document.getElementById('pixQrCodeImg').src = 'data:image/png;base64,' + data.qrCodeBase64;
-
-            // Coloca o texto Copia e Cola no input
-            document.getElementById('pixCopiaCola').value = data.qrCodeCopiaECola;
-
-            // Chama o Bootstrap para exibir a janela Modal flutuante na tela
-            const pixModal = new bootstrap.Modal(document.getElementById('pixModal'));
-            pixModal.show();
-        })
-        .catch(error => {
-            alert('Falha na comunicação com o Mercado Pago: ' + error.message);
-        })
-        .finally(() => {
-            // Restaura o botão ao normal, quer tenha dado erro ou sucesso
-            btnElement.innerHTML = textoOriginal;
-            btnElement.disabled = false;
-        });
-    }
-
-    // 8. FUNÇÃO: Copia o código Pix para a área de transferência do usuário
-    function copiarPix() {
-        const inputPix = document.getElementById('pixCopiaCola');
-        inputPix.select();
-        inputPix.setSelectionRange(0, 99999); // Suporte extra para dispositivos mobile
-        navigator.clipboard.writeText(inputPix.value);
-        alert("Copiado com sucesso! Agora é só colar no app do banco.");
-    }
+function copiarPix() {
+    const inputPix = document.getElementById('pixCopiaCola');
+    inputPix.select();
+    inputPix.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(inputPix.value);
+    alert("Copiado com sucesso!");
 }
