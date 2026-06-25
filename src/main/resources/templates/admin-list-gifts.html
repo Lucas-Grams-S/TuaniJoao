@@ -41,17 +41,21 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="gift : ${gifts}">
+                <tr th:if="${gifts == null or #lists.isEmpty(gifts)}">
+                    <td colspan="5" class="text-center py-5 text-muted">
+                        <h5>Nenhum presente na lista 🎁</h5>
+                        <p>Você ainda não cadastrou nenhum presente no banco de dados.</p>
+                    </td>
+                </tr>
+
+                <tr th:unless="${gifts == null or #lists.isEmpty(gifts)}" th:each="gift : ${gifts}">
                     <td th:text="${gift.id}">1</td>
                     <td>
                         <img th:src="${gift.photoUrl}" alt="Foto" class="preview-img" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
                     </td>
                     <td th:text="${gift.name}">Nome</td>
-                    <td th:text="|R$ ${#numbers.formatDecimal(gift.price, 1, 'POINT', 2, 'COMMA')}|">R$ 0,00</td>
+                    <td th:text="|R$ ${gift.price != null ? #numbers.formatDecimal(gift.price, 1, 'POINT', 2, 'COMMA') : '0,00'}|">R$ 0,00</td>
                     <td class="text-truncate" style="max-width: 250px;" th:text="${gift.description}">Descrição</td>
-                </tr>
-                <tr th:if="${#lists.isEmpty(gifts)}">
-                    <td colspan="5" class="text-center py-4 text-muted">Nenhum presente cadastrado ainda no banco de dados.</td>
                 </tr>
                 </tbody>
             </table>

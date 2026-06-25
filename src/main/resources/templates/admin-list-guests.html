@@ -38,12 +38,16 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="guest : ${guests}">
+                <tr th:if="${guests == null or #lists.isEmpty(guests)}">
+                    <td colspan="2" class="text-center py-5 text-muted">
+                        <h5>Lista Vazia 👥</h5>
+                        <p>Nenhum convidado foi importado para o sistema ainda.</p>
+                    </td>
+                </tr>
+
+                <tr th:unless="${guests == null or #lists.isEmpty(guests)}" th:each="guest : ${guests}">
                     <td th:text="${guest.id}">1</td>
                     <td th:text="${guest.name}">Nome do Convidado</td>
-                </tr>
-                <tr th:if="${#lists.isEmpty(guests)}">
-                    <td colspan="2" class="text-center py-4 text-muted">Nenhum convidado foi importado ainda.</td>
                 </tr>
                 </tbody>
             </table>
