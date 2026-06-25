@@ -59,7 +59,7 @@
                     <td class="text-truncate" style="max-width: 200px;" th:text="${gift.description}">Descrição</td>
 
                     <td class="text-center">
-                        <button class="btn btn-sm btn-success mb-1" th:onclick="'gerarPix(' + ${gift.id} + ', this)'">💠 Testar Pix</button>
+                        <button class="btn btn-sm btn-success mb-1" th:onclick="'abrirModalDadosPessoais(' + ${gift.id} + ')'">💠 Testar Pix</button>
                         <button class="btn btn-sm btn-outline-primary mb-1" onclick="alert('Logo faremos o cartão!')">💳 Cartão</button>
                     </td>
                 </tr>
@@ -85,6 +85,42 @@
                     <input type="text" id="pixCopiaCola" class="form-control" readonly>
                     <button class="btn btn-secondary" onclick="copiarPix()">Copiar</button>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="dadosConvidadoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">Identificação para o Pagamento</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="hidden" id="modalGiftId">
+                <p class="small text-muted mb-3">Estes dados são necessários por exigência do Banco Central para emissão do Pix.</p>
+
+                <div class="mb-3">
+                    <label class="form-label">Nome Completo</label>
+                    <input type="text" id="guestName" class="form-control" placeholder="Seu nome" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">E-mail</label>
+                    <input type="email" id="guestEmail" class="form-control" placeholder="Para receber o recibo" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">CPF</label>
+                    <input type="text" id="guestCpf" class="form-control" placeholder="Apenas números" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Deixe uma mensagem para os noivos! 💌</label>
+                    <textarea id="guestMessage" class="form-control" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="btnConfirmarPagamento" onclick="confirmarDadosEGerarPix()">Confirmar e Gerar Pix</button>
             </div>
         </div>
     </div>

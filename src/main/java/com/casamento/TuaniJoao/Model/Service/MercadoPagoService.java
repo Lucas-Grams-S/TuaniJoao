@@ -1,5 +1,6 @@
 package com.casamento.TuaniJoao.Model.Service;
 
+import com.casamento.TuaniJoao.Model.Dto.GuestPaymentDTO;
 import com.mercadopago.client.common.IdentificationRequest;
 import com.mercadopago.client.payment.PaymentClient;
 import com.mercadopago.client.payment.PaymentCreateRequest;
@@ -14,24 +15,22 @@ import java.math.BigDecimal;
 @Service
 public class MercadoPagoService {
 
-    public Payment gerarPagamentoPix(String nomePresente, BigDecimal valor) throws MPException, MPApiException {
+    public Payment gerarPagamentoPix(String nomePresente, BigDecimal valor, GuestPaymentDTO payerInfo) throws MPException, MPApiException {
         PaymentClient client = new PaymentClient();
 
-        // Truque para o Mercado Pago não achar que você está comprando de si mesmo
-        String emailDinamico = "convidado_" + System.currentTimeMillis() + "@teste.com";
+        // Limpa o CPF tirando pontos e traços para o Mercado Pago não reclamar
+        String cleanCpf = payerInfo.getCpf().replaceAll("[^0-9]", "");
 
         PaymentCreateRequest request = PaymentCreateRequest.builder()
                 .transactionAmount(valor)
-                .description("Presente de Casamento: " + nomePresente)
+                .description("Presente: " + nomePresente)
                 .paymentMethodId("pix")
                 .payer(PaymentPayerRequest.builder()
-                        .email(emailDinamico)
-                        .firstName("Convidado")
-                        .lastName("Teste")
-                        // REGRA DO PIX: Identificação (CPF) é obrigatória!
+                        .email(payerInfo.getEmail()) // E-mail digitado na tela
+                        .firstName(payerInfo.getName()) // Nome digitado
                         .identification(IdentificationRequest.builder()
                                 .type("CPF")
-                                .number("19119119100") // CPF genérico aceito no ambiente de testes
+                                .number(cleanCpf) // CPF limpo
                                 .build())
                         .build())
                 .build();

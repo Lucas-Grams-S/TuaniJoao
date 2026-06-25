@@ -153,13 +153,49 @@ function showAlert(message, bootstrapClass) {
 // MÓDULO DE PAGAMENTOS (TESTES)
 // ==========================================
 
-function gerarPix(giftId, btnElement) {
+// ==========================================
+// MÓDULO DE PAGAMENTOS (TESTES)
+// ==========================================
+
+// 1. Abre o modal e guarda o ID do presente de forma oculta
+function abrirModalDadosPessoais(giftId) {
+    document.getElementById('modalGiftId').value = giftId;
+
+    // Limpa o formulário caso tenha sujeira de um teste anterior
+    document.getElementById('guestName').value = '';
+    document.getElementById('guestEmail').value = '';
+    document.getElementById('guestCpf').value = '';
+    document.getElementById('guestMessage').value = '';
+
+    const modal = new bootstrap.Modal(document.getElementById('dadosConvidadoModal'));
+    modal.show();
+}
+
+// 2. Coleta os dados, envia pro Java e abre o Pix
+function confirmarDadosEGerarPix() {
+    const giftId = document.getElementById('modalGiftId').value;
+    const name = document.getElementById('guestName').value.trim();
+    const email = document.getElementById('guestEmail').value.trim();
+    const cpf = document.getElementById('guestCpf').value.trim();
+    const message = document.getElementById('guestMessage').value.trim();
+
+    if (!name || !email || !cpf) {
+        alert("Por favor, preencha Nome, E-mail e CPF para prosseguir.");
+        return;
+    }
+
+    const btnElement = document.getElementById('btnConfirmarPagamento');
     const textoOriginal = btnElement.innerHTML;
-    btnElement.innerHTML = '⏳ Aguarde...';
+    btnElement.innerHTML = '⏳ Gerando Pix...';
     btnElement.disabled = true;
 
+    // Objeto que reflete exatamente o DTO do Java
+    const payload = { name, email, cpf, message };
+
     fetch(`/api/payments/pix/${giftId}`, {
-        method: 'POST'
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }, // Diz ao Java que estamos enviando JSON
+        body: JSON.stringify(payload)
     })
     .then(async response => {
         const data = await response.json();
@@ -167,10 +203,14 @@ function gerarPix(giftId, btnElement) {
         return data;
     })
     .then(data => {
+        // Esconde o modal de dados
+        bootstrap.Modal.getInstance(document.getElementById('dadosConvidadoModal')).hide();
+
+        // Alimenta e exibe o modal do QR Code
         document.getElementById('pixQrCodeImg').src = 'data:image/png;base64,' + data.qrCodeBase64;
         document.getElementById('pixCopiaCola').value = data.qrCodeCopiaECola;
-        const pixModalElement = document.getElementById('pixModal');
-        const pixModal = new bootstrap.Modal(pixModalElement);
+
+        const pixModal = new bootstrap.Modal(document.getElementById('pixModal'));
         pixModal.show();
     })
     .catch(error => {

@@ -1,5 +1,6 @@
 package com.casamento.TuaniJoao.Controller;
 
+import com.casamento.TuaniJoao.Model.Dto.GuestPaymentDTO;
 import com.casamento.TuaniJoao.Model.Dto.PixResponseDTO;
 import com.casamento.TuaniJoao.Model.Entity.Gift;
 import com.casamento.TuaniJoao.Model.Service.GiftService;
@@ -11,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -24,10 +26,9 @@ public class PaymentController {
     private final MercadoPagoService mercadoPagoService;
 
     @PostMapping("/pix/{giftId}")
-    public ResponseEntity<?> criarPagamentoPix(@PathVariable Long giftId) {
+    public ResponseEntity<?> criarPagamentoPix(@PathVariable Long giftId, @RequestBody GuestPaymentDTO payerInfo) {
         try {
-            log.info("🎯 Requisição recebida para gerar Pix para o presente ID: {}", giftId);
-
+            log.info("🎯 Requisição recebida para Pix ID {}. Pagador: {}", giftId, payerInfo.getName());
             // 1. Busca o presente no banco de dados
             Gift gift = giftService.findById(giftId);
             if (gift == null) {
@@ -35,7 +36,7 @@ public class PaymentController {
             }
 
             // 2. Chama o serviço do Mercado Pago passando o nome e o preço real do presente
-            Payment payment = mercadoPagoService.gerarPagamentoPix(gift.getName(), gift.getPrice());
+            Payment payment = mercadoPagoService.gerarPagamentoPix(gift.getName(), gift.getPrice(), payerInfo);
 
             // 3. Extrai os dados específicos do Pix de dentro do calhamaço de dados do Mercado Pago
             Long paymentId = payment.getId();
