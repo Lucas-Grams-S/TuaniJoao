@@ -66,3 +66,155 @@ function salvarRsvpVisual() {
         document.getElementById('familyContainer').classList.add('d-none');
     }, 1500);
 }
+// ==========================================
+// MÓDULO DE PAGAMENTO: PIX E CARTÃO (PÚBLICO)
+// ==========================================
+
+// Inicializa o Mercado Pago
+const mp = new MercadoPago('TEST-83921b7f-5e2a-40f2-b7f7-44ab671f6299', {
+    locale: 'pt-BR'
+});
+const bricksBuilder = mp.bricks();
+let cardPaymentBrickController;
+
+// 1. Função que abre as opções de pagamento
+// No botão do HTML, vamos chamar esta função para o convidado escolher como quer pagar.
+function abrirOpcoesDePagamento(giftId, price) {
+    // Pergunta simples para separar o fluxo
+    if (confirm("Deseja pagar via PIX? (Clique em OK para Pix, ou Cancelar para Cartão de Crédito)")) {
+        abrirModalPix(giftId);
+    } else {
+        abrirModalCartao(giftId, price);
+    }
+}
+
+// ---------------- FLUXO DO PIX ----------------
+function abrirModalPix(giftId) {
+    document.getElementById('modalGiftId').value = giftId;
+    document.getElementById('guestName').value = '';
+    document.getElementById('guestEmail').value = '';
+    document.getElementById('guestCpf').value = '';
+    document.getElementById('guestMessage').value = '';
+
+    const modal = new bootstrap.Modal(document.getElementById('dadosConvidadoModal'));
+    modal.show();
+}
+
+function confirmarDadosEGerarPix() {
+    const giftId = document.getElementById('modalGiftId').value;
+    const name = document.getElementById('guestName').value.trim();
+    const email = document.getElementById('guestEmail').value.trim();
+    const cpf = document.getElementById('guestCpf').value.trim();
+    const message = document.getElementById('guestMessage').value.trim();
+
+    if (!name || !email || !cpf) {
+        alert("Por favor, preencha Nome, E-mail e CPF para prosseguir.");
+        return;
+    }
+
+    const btnElement = document.getElementById('btnConfirmarPagamento');
+    const textoOriginal = btnElement.innerHTML;
+    btnElement.innerHTML = '⏳ Gerando Pix...';
+    btnElement.disabled = true;
+
+    const payload = { name, email, cpf, message };
+
+    fetch(`/api/payments/pix/${giftId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(async response => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Erro crítico ao gerar o Pix.');
+        return data;
+    })
+    .then(data => {
+        bootstrap.Modal.getInstance(document.getElementById('dadosConvidadoModal')).hide();
+        document.getElementById('pixQrCodeImg').src = 'data:image/png;base64,' + data.qrCodeBase64;
+        document.getElementById('pixCopiaCola').value = data.qrCodeCopiaECola;
+
+        const pixModal = new bootstrap.Modal(document.getElementById('pixModal'));
+        pixModal.show();
+    })
+    .catch(error => {
+        alert('Falha na comunicação com o Mercado Pago: ' + error.message);
+    })
+    .finally(() => {
+        btnElement.innerHTML = textoOriginal;
+        btnElement.disabled = false;
+    });
+}
+
+function copiarPix() {
+    const inputPix = document.getElementById('pixCopiaCola');
+    inputPix.select();
+    inputPix.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(inputPix.value);
+    alert("Copiado com sucesso!");
+}
+
+// ---------------- FLUXO DO CARTÃO ----------------
+function abrirModalCartao(giftId, price) {
+    document.getElementById('modalCartaoGiftId').value = giftId;
+    document.getElementById('guestCartaoMessage').value = '';
+
+    const modal = new bootstrap.Modal(document.getElementById('modalCartao'));
+    modal.show();
+
+    renderCardPaymentBrick(price);
+}
+
+const renderCardPaymentBrick = async (amount) => {
+    const settings = {
+        initialization: { amount: amount },
+        callbacks: {
+            onReady: () => console.log("Formulário de cartão carregado."),
+            onSubmit: (cardFormData) => processarPagamentoCartao(cardFormData),
+            onError: (error) => console.warn("Aviso Mercado Pago: ", error.message),
+        },
+    };
+
+    if (cardPaymentBrickController) cardPaymentBrickController.unmount();
+
+    cardPaymentBrickController = await bricksBuilder.create("cardPayment", "cardPaymentBrick_container", settings);
+};
+
+function processarPagamentoCartao(cardFormData) {
+    return new Promise((resolve, reject) => {
+        const giftId = document.getElementById('modalCartaoGiftId').value;
+        const mensagem = document.getElementById('guestCartaoMessage').value.trim();
+
+        const payload = {
+            name: cardFormData.payer.first_name || "Convidado",
+            email: cardFormData.payer.email,
+            cpf: cardFormData.payer.identification.number,
+            message: mensagem,
+            token: cardFormData.token,
+            paymentMethodId: cardFormData.payment_method_id,
+            installments: cardFormData.installments
+        };
+
+        fetch(`/api/payments/credit-card/${giftId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(async response => {
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || 'Falha ao processar pagamento.');
+
+            if(data.status === "approved") {
+                alert("🎉 Pagamento Aprovado! O ID da transação é: " + data.paymentId);
+                bootstrap.Modal.getInstance(document.getElementById('modalCartao')).hide();
+                resolve();
+            } else {
+                throw new Error("O status do pagamento é: " + data.statusDetail);
+            }
+        })
+        .catch(error => {
+            alert('Aviso: ' + error.message);
+            reject();
+        });
+    });
+}
