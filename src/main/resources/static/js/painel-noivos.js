@@ -323,3 +323,40 @@ function copiarPix() {
     navigator.clipboard.writeText(inputPix.value);
     alert("Copiado com sucesso!");
 }
+
+// ==========================================
+// MÓDULO DE CONVIDADOS (ADMIN)
+// ==========================================
+
+function abrirModalExcluirConvidado(id, name) {
+    // Alimenta o modal com os dados do convidado clicado
+    document.getElementById('deleteGuestId').value = id;
+    document.getElementById('deleteGuestName').innerText = name;
+
+    // Exibe o modal na tela
+    const modal = new bootstrap.Modal(document.getElementById('modalExcluirConvidado'));
+    modal.show();
+}
+
+function confirmarExclusaoConvidado() {
+    const id = document.getElementById('deleteGuestId').value;
+    const btnExcluir = document.getElementById('btnConfirmarExclusao');
+
+    btnExcluir.disabled = true;
+    btnExcluir.innerText = 'Excluindo...';
+
+    fetch(`/api/guests/${id}`, {
+        method: 'DELETE'
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Falha ao excluir o convidado.');
+
+        // Recarrega a página para a tabela atualizar automaticamente sem o convidado
+        window.location.reload();
+    })
+    .catch(error => {
+        alert('Aviso: ' + error.message);
+        btnExcluir.disabled = false;
+        btnExcluir.innerText = 'Sim, Excluir';
+    });
+}

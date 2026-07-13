@@ -66,4 +66,17 @@ public class GuestController {
 
         return ResponseEntity.ok("Lista de convidados importada com sucesso!");
     }
+
+    /**
+     * Rota para excluir um convidado.
+     * Exemplo de uso: DELETE /api/guests/5
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteGuest(@PathVariable Long id) {
+        log.info("Requisição recebida para excluir convidado ID: {}", id);
+        guestService.deleteGuest(id);
+
+        // Retorna 204 No Content (sucesso sem corpo de resposta)
+        return ResponseEntity.noContent().build();
+    }
 }
