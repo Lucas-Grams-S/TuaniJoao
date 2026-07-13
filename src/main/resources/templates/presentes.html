@@ -96,6 +96,34 @@
 <!-- MODAIS DE PAGAMENTO (PIX E CARTÃO)                        -->
 <!-- ========================================================= -->
 
+<!-- MODAL DE ESCOLHA DE PAGAMENTO -->
+<div class="modal fade" id="modalEscolhaPagamento" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content text-center">
+            <div class="modal-header border-0 pb-0">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 pt-2">
+                <!-- Guardamos os dados aqui temporariamente -->
+                <input type="hidden" id="escolhaGiftId">
+                <input type="hidden" id="escolhaGiftPrice">
+
+                <h4 style="color: var(--terracotta);" class="mb-3">Como deseja presentear? 🎁</h4>
+                <p class="text-muted mb-4 small">Escolha a forma de pagamento mais conveniente para você. O processo é 100% seguro.</p>
+
+                <div class="d-grid gap-3">
+                    <button class="btn btn-success" style="padding: 12px; font-weight: bold;" onclick="escolherPix()">
+                        💠 Pagar com Pix
+                    </button>
+                    <button class="btn btn-outline-primary" style="padding: 12px; font-weight: bold;" onclick="escolherCartao()">
+                        💳 Cartão de Crédito
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- MODAL 1: Coleta de Dados do Convidado -->
 <div class="modal fade" id="dadosConvidadoModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">

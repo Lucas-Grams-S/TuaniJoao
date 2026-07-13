@@ -79,13 +79,36 @@ let cardPaymentBrickController;
 
 // 1. Função que abre as opções de pagamento
 // No botão do HTML, vamos chamar esta função para o convidado escolher como quer pagar.
+// 1. Abre o modal bonito de escolha e guarda os valores
 function abrirOpcoesDePagamento(giftId, price) {
-    // Pergunta simples para separar o fluxo
-    if (confirm("Deseja pagar via PIX? (Clique em OK para Pix, ou Cancelar para Cartão de Crédito)")) {
-        abrirModalPix(giftId);
-    } else {
-        abrirModalCartao(giftId, price);
-    }
+    document.getElementById('escolhaGiftId').value = giftId;
+    document.getElementById('escolhaGiftPrice').value = price;
+
+    const modal = new bootstrap.Modal(document.getElementById('modalEscolhaPagamento'));
+    modal.show();
+}
+
+// 2. Se o usuário escolher PIX
+function escolherPix() {
+    const giftId = document.getElementById('escolhaGiftId').value;
+
+    // Esconde o modal de escolha
+    bootstrap.Modal.getInstance(document.getElementById('modalEscolhaPagamento')).hide();
+
+    // Abre o fluxo do Pix
+    abrirModalPix(giftId);
+}
+
+// 3. Se o usuário escolher CARTÃO
+function escolherCartao() {
+    const giftId = document.getElementById('escolhaGiftId').value;
+    const price = document.getElementById('escolhaGiftPrice').value;
+
+    // Esconde o modal de escolha
+    bootstrap.Modal.getInstance(document.getElementById('modalEscolhaPagamento')).hide();
+
+    // Abre o fluxo do Cartão
+    abrirModalCartao(giftId, price);
 }
 
 // ---------------- FLUXO DO PIX ----------------
