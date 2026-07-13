@@ -103,7 +103,7 @@ function saveGiftsBatch() {
         return response.json();
     })
     .then(data => {
-        alert(`Sucesso! ${data.length} presentes salvos.`);
+        alert(`Sucesso! l{data.length} presentes salvos.`);
         stagedGifts = [];
         renderTable();
     })
@@ -259,7 +259,7 @@ const renderCardPaymentBrick = async (amount) => {
                 return processarPagamentoCartao(cardFormData);
             },
             onError: (error) => {
-                alert("Erro no formulário de pagamento: " + error.message);
+                console.warn("Aviso interno do Mercado Pago: ", error.message);
             },
         },
     };
