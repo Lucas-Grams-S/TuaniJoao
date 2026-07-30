@@ -2,6 +2,7 @@ package com.casamento.TuaniJoao.Controller;
 
 import com.casamento.TuaniJoao.Model.Service.GiftService;
 import com.casamento.TuaniJoao.Model.Service.GuestService;
+import com.casamento.TuaniJoao.Model.Service.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -16,6 +17,8 @@ public class CasamentoController {
     private final GiftService giftService;
 
     private final GuestService guestService;
+
+    private final OrderService orderService;
 
     @GetMapping
     public String adminPage() {
@@ -32,6 +35,16 @@ public class CasamentoController {
     public String listGuests(Model model) {
         model.addAttribute("guests", guestService.findAll());
         return "painel-noivos-list-guests";
+    }
+
+    /**
+     * 🛒 Rota para visualizar o Histórico de Presentes Comprados / Pedidos
+     */
+    @GetMapping("/orders")
+    public String verHistoricoPedidos(Model model) {
+        // Busca todos os pedidos ordenados pelos mais recentes primeiro
+        model.addAttribute("orders", orderService.findAllOrders());
+        return "painel-noivos-list-orders"; // Aponta para o novo template que criaremos no Passo 2
     }
 
 }

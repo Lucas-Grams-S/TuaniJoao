@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Histórico de Presentes Comprados - Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link th:href="@{/css/painel-noivos.css}" rel="stylesheet">
+</head>
+<body>
+
+<!-- NAVBAR ADMINISTRATIVA RESPONSIVA -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 sticky-top shadow-sm">
+    <div class="container">
+        <!-- Logo / Marca -->
+        <a class="navbar-brand fw-bold" th:href="@{/painel-noivos}">💍 Casamento Admin</a>
+
+        <!-- Botão Hambúrguer para Telas Pequenas (Celular/Tablet) -->
+        <button class="navbar-toggler border-0"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#menuAdminCollapse"
+                aria-controls="menuAdminCollapse"
+                aria-expanded="false"
+                aria-label="Alternar navegação">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Links que encolhem no celular -->
+        <div class="collapse navbar-collapse" id="menuAdminCollapse">
+            <ul class="navbar-nav ms-auto text-center mt-3 mt-lg-0">
+                <li class="nav-item my-1 my-lg-0">
+                    <a class="nav-link" th:href="@{/painel-noivos}">Novo Cadastro</a>
+                </li>
+                <li class="nav-item my-1 my-lg-0">
+                    <a class="nav-link" th:href="@{/painel-noivos/gifts}">Ver Presentes</a>
+                </li>
+                <li class="nav-item my-1 my-lg-0">
+                    <a class="nav-link" th:href="@{/painel-noivos/guests}">Ver Convidados</a>
+                </li>
+                <li class="nav-item my-1 my-lg-0">
+                    <a class="nav-link active" th:href="@{/painel-noivos/orders}">Histórico de Vendas</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>🎁 Histórico de Presentes & Pedidos</h2>
+    </div>
+
+    <div class="card p-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                <tr>
+                    <th>ID Pedido</th>
+                    <th>Convidado</th>
+                    <th>Presente</th>
+                    <th>Valor</th>
+                    <th>Método</th>
+                    <th class="text-center">Status</th>
+                    <th>Mensagem</th>
+                </tr>
+                </thead>
+                <tbody>
+                <!-- Se não houver pedidos -->
+                <tr th:if="${orders == null or #lists.isEmpty(orders)}">
+                    <td colspan="7" class="text-center py-5 text-muted">
+                        <h5>Nenhum presente comprado ainda 🎁</h5>
+                        <p>Assim que os convidados começarem a presentear, os pedidos aparecerão aqui!</p>
+                    </td>
+                </tr>
+
+                <!-- Loop de pedidos -->
+                <tr th:unless="${orders == null or #lists.isEmpty(orders)}" th:each="order : ${orders}">
+                    <td th:text="${order.id}">1</td>
+
+                    <!-- Nome e E-mail do Convidado -->
+                    <td>
+                        <strong th:text="${order.guestName}">Nome do Convidado</strong><br>
+                        <small class="text-muted" th:text="${order.guestEmail}">email@exemplo.com</small>
+                    </td>
+
+                    <!-- Nome do Presente -->
+                    <td th:text="${order.gift != null ? order.gift.name : 'Presente Removido'}">Liquidificador</td>
+
+                    <!-- Valor Formatado -->
+                    <td th:text="|R$ ${#numbers.formatDecimal(order.amount, 1, 'POINT', 2, 'COMMA')}|">R$ 150,00</td>
+
+                    <!-- Pix ou Cartão -->
+                    <td>
+                        <span class="badge bg-light text-dark border" th:text="${order.paymentMethod}">PIX</span>
+                    </td>
+
+                    <!-- Status Coloridos -->
+                    <td class="text-center">
+                        <span th:if="${order.status == 'APROVADO'}" class="badge bg-success">✅ APROVADO</span>
+                        <span th:if="${order.status == 'PENDENTE'}" class="badge bg-warning text-dark">⏳ PENDENTE</span>
+                        <span th:if="${order.status == 'RECUSADO'}" class="badge bg-danger">❌ RECUSADO</span>
+                        <span th:if="${order.status != 'APROVADO' and order.status != 'PENDENTE' and order.status != 'RECUSADO'}"
+                              class="badge bg-secondary" th:text="${order.status}">OUTRO</span>
+                    </td>
+
+                    <!-- Mensagem para os noivos -->
+                    <td class="text-truncate" style="max-width: 250px;">
+                        <em th:if="${order.message != null and !order.message.isEmpty()}"
+                            th:text="|&quot;${order.message}&quot;|">"Muitas felicidades!"</em>
+                        <span th:unless="${order.message != null and !order.message.isEmpty()}" class="text-muted small">-</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
