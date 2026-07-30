@@ -21,13 +21,13 @@
         <div class="collapse navbar-collapse" id="menuConvidados">
             <ul class="navbar-nav ms-auto text-center">
                 <li class="nav-item">
+                    <a class="nav-link active" th:href="@{/convidados/informacoes}">Informações</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" th:href="@{/convidados/presentes}">Lista de Presentes</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" th:href="@{/convidados/confirmar-presenca}">Confirmar Presença</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link active" th:href="@{/convidados/informacoes}">Informações</a>
                 </li>
             </ul>
         </div>
@@ -39,11 +39,16 @@
     <div id="noivosCarousel" class="carousel slide shadow-sm" data-bs-ride="carousel">
         <div class="carousel-inner">
             <div class="carousel-item active">
-                <!-- Imagem de exemplo, depois você troca pelas fotos reais -->
-                <img src="https://images.unsplash.com/photo-1511285560929-80b456fea0bc?q=80&w=2069&auto=format&fit=crop" class="d-block w-100" alt="Foto dos Noivos 1">
+                <img th:src="@{/images/carrossel/VKP_3184-145.jpg}" class="d-block w-100" alt="Foto dos Noivos 1">
             </div>
             <div class="carousel-item">
-                <img src="https://images.unsplash.com/photo-1519225421980-715cb0215aed?q=80&w=2070&auto=format&fit=crop" class="d-block w-100" alt="Foto dos Noivos 2">
+                <img th:src="@{/images/carrossel/VKP_3249.jpg}" class="d-block w-100" alt="Foto dos Noivos 2">
+            </div>
+            <div class="carousel-item">
+                <img th:src="@{/images/carrossel/VKP_3291.jpg}" class="d-block w-100" alt="Foto dos Noivos 3">
+            </div>
+            <div class="carousel-item">
+                <img th:src="@{/images/carrossel/VKP_3300-171.jpg}" class="d-block w-100" alt="Foto dos Noivos 4">
             </div>
         </div>
         <button class="carousel-control-prev" type="button" data-bs-target="#noivosCarousel" data-bs-slide="prev">
