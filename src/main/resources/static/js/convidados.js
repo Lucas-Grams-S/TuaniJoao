@@ -7,23 +7,51 @@
 // MÓDULO DE CONFIRMAÇÃO DE PRESENÇA (RSVP)
 // ==========================================
 
+let searchTimeout = null;
+
+/**
+ * Função acionada pelo evento oninput enquanto o usuário digita.
+ * Utiliza Debounce para aguardar 400ms após a última tecla digitada.
+ */
+function onSearchInputChange() {
+    const nomeBusca = document.getElementById('searchGuestName').value.trim();
+    const feedback = document.getElementById('searchFeedback');
+    const container = document.getElementById('familyContainer');
+
+    // Se o usuário apagar o texto ou deixar menos de 3 letras, oculta os resultados
+    if (nomeBusca.length < 3) {
+        feedback.classList.add('d-none');
+        container.classList.add('d-none');
+        return;
+    }
+
+    // Cancela a busca anterior se o usuário ainda estiver digitando
+    if (searchTimeout) {
+        clearTimeout(searchTimeout);
+    }
+
+    // Agenda a busca para 400ms após a última tecla pressionada
+    searchTimeout = setTimeout(() => {
+        buscarFamiliaVisual();
+    }, 400);
+}
+
 function buscarFamiliaVisual() {
     const nomeBusca = document.getElementById('searchGuestName').value.trim();
     const feedback = document.getElementById('searchFeedback');
     const container = document.getElementById('familyContainer');
     const lista = document.getElementById('familyMembersList');
 
-    // Esconde mensagens antigas
     feedback.classList.add('d-none');
     container.classList.add('d-none');
 
+    // Mínimo de caracteres para evitar buscar a lista inteira com uma única letra
     if (nomeBusca.length < 3) {
         feedback.innerText = "Por favor, digite pelo menos 3 letras do seu nome.";
         feedback.classList.remove('d-none');
         return;
     }
 
-    // Chamada REAL à nossa API Java que busca ignorando acentos e maiúsculas/minúsculas
     fetch(`/api/guests/search?name=${encodeURIComponent(nomeBusca)}`)
         .then(async response => {
             if (!response.ok) throw new Error('Erro ao buscar convidados.');
@@ -38,7 +66,7 @@ function buscarFamiliaVisual() {
                 return;
             }
 
-            // Desenha os checkboxes reais com base nos dados vindos do banco
+            // Desenha os checkboxes na tela
             convidados.forEach(convidado => {
                 const checkedStr = convidado.isConfirmed ? "checked" : "";
                 const html = `
@@ -58,7 +86,6 @@ function buscarFamiliaVisual() {
                 lista.innerHTML += html;
             });
 
-            // Exibe o painel da família com os resultados
             container.classList.remove('d-none');
         })
         .catch(error => {
@@ -72,7 +99,6 @@ function salvarRsvpVisual() {
     btn.innerHTML = "⏳ Salvando...";
     btn.disabled = true;
 
-    // Coleta os IDs de todas as caixinhas que foram marcadas como confirmadas na tela
     const checkboxes = document.querySelectorAll('.rsvp-checkbox:checked');
     const idsConfirmados = Array.from(checkboxes).map(cb => parseInt(cb.value));
 
@@ -83,7 +109,6 @@ function salvarRsvpVisual() {
         return;
     }
 
-    // Envia o lote de IDs selecionados para a rota /api/guests/confirm
     fetch('/api/guests/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -92,11 +117,9 @@ function salvarRsvpVisual() {
     .then(response => {
         if (!response.ok) throw new Error('Falha ao registrar confirmação.');
 
-        // Exibe o modal bonitinho de sucesso
         const modal = new bootstrap.Modal(document.getElementById('modalSucessoRsvp'));
         modal.show();
 
-        // Limpa a tela após concluir
         document.getElementById('searchGuestName').value = '';
         document.getElementById('familyContainer').classList.add('d-none');
     })

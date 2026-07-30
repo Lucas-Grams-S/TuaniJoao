@@ -68,7 +68,8 @@
         <div class="card-body p-4 text-center">
             <label for="searchGuestName" class="form-label fw-bold" style="color: var(--slate-blue);">Qual o seu nome?</label>
             <div class="input-group input-group-lg mb-3">
-                <input type="text" id="searchGuestName" class="form-control" placeholder="Ex: João da Silva">
+                <!-- Adicionado oninput para detectar a digitação em tempo real -->
+                <input type="text" id="searchGuestName" class="form-control" placeholder="Ex: João da Silva" oninput="onSearchInputChange()">
                 <button class="btn btn-presentear" type="button" onclick="buscarFamiliaVisual()">Buscar</button>
             </div>
             <p id="searchFeedback" class="text-danger small d-none">Nenhum convite encontrado com esse nome.</p>
