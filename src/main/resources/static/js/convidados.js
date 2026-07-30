@@ -136,7 +136,7 @@ function salvarRsvpVisual() {
 // ==========================================
 
 // Inicializa o Mercado Pago
-const mp = new MercadoPago('TEST-83921b7f-5e2a-40f2-b7f7-44ab671f6299', {
+const mp = new MercadoPago('APP_USR-8e5905b4-85c5-42c9-82bc-2bd4f12cec59', {
     locale: 'pt-BR'
 });
 const bricksBuilder = mp.bricks();
