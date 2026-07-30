@@ -3,6 +3,10 @@
  * Substituiremos isso pelas chamadas reais da API (fetch) na próxima fase.
  */
 
+// ==========================================
+// MÓDULO DE CONFIRMAÇÃO DE PRESENÇA (RSVP)
+// ==========================================
+
 function buscarFamiliaVisual() {
     const nomeBusca = document.getElementById('searchGuestName').value.trim();
     const feedback = document.getElementById('searchFeedback');
@@ -19,32 +23,48 @@ function buscarFamiliaVisual() {
         return;
     }
 
-    // SIMULAÇÃO: Dados falsos que viriam do Banco de Dados baseados no Lote da Família
-    const familiaSimulada = [
-        { id: 1, nome: nomeBusca, confirmado: true },
-        { id: 2, nome: "Acompanhante 1", confirmado: false },
-        { id: 3, nome: "Acompanhante 2 (Criança)", confirmado: false }
-    ];
+    // Chamada REAL à nossa API Java que busca ignorando acentos e maiúsculas/minúsculas
+    fetch(`/api/guests/search?name=${encodeURIComponent(nomeBusca)}`)
+        .then(async response => {
+            if (!response.ok) throw new Error('Erro ao buscar convidados.');
+            return response.json();
+        })
+        .then(convidados => {
+            lista.innerHTML = '';
 
-    // Limpa a lista atual
-    lista.innerHTML = '';
+            if (!convidados || convidados.length === 0) {
+                feedback.innerText = "Nenhum convite encontrado com esse nome. Verifique a ortografia ou tente apenas o primeiro nome.";
+                feedback.classList.remove('d-none');
+                return;
+            }
 
-    // Desenha os checkboxes na tela com as cores da paleta
-    familiaSimulada.forEach(convidado => {
-        const checkedStr = convidado.confirmado ? "checked" : "";
-        const html = `
-            <div class="form-check form-switch mb-3 p-3 border rounded" style="background-color: var(--bg-light); border-color: var(--sage-green) !important;">
-                <input class="form-check-input ms-0 me-3" type="checkbox" role="switch" id="convidado_${convidado.id}" ${checkedStr} style="transform: scale(1.3); cursor: pointer;">
-                <label class="form-check-label fw-bold" for="convidado_${convidado.id}" style="cursor: pointer; padding-top: 2px;">
-                    ${convidado.nome}
-                </label>
-            </div>
-        `;
-        lista.innerHTML += html;
-    });
+            // Desenha os checkboxes reais com base nos dados vindos do banco
+            convidados.forEach(convidado => {
+                const checkedStr = convidado.isConfirmed ? "checked" : "";
+                const html = `
+                    <div class="form-check form-switch mb-3 p-3 border rounded" style="background-color: var(--bg-light); border-color: var(--sage-green) !important;">
+                        <input class="form-check-input ms-0 me-3 rsvp-checkbox"
+                               type="checkbox"
+                               role="switch"
+                               id="convidado_${convidado.id}"
+                               value="${convidado.id}"
+                               ${checkedStr}
+                               style="transform: scale(1.3); cursor: pointer;">
+                        <label class="form-check-label fw-bold" for="convidado_${convidado.id}" style="cursor: pointer; padding-top: 2px;">
+                            ${convidado.name}
+                        </label>
+                    </div>
+                `;
+                lista.innerHTML += html;
+            });
 
-    // Exibe o painel da família
-    container.classList.remove('d-none');
+            // Exibe o painel da família com os resultados
+            container.classList.remove('d-none');
+        })
+        .catch(error => {
+            feedback.innerText = "Ocorreu um erro ao comunicar com o servidor. Tente novamente.";
+            feedback.classList.remove('d-none');
+        });
 }
 
 function salvarRsvpVisual() {
@@ -52,19 +72,41 @@ function salvarRsvpVisual() {
     btn.innerHTML = "⏳ Salvando...";
     btn.disabled = true;
 
-    // Simula o tempo de salvamento no banco de dados (1,5 segundos)
-    setTimeout(() => {
+    // Coleta os IDs de todas as caixinhas que foram marcadas como confirmadas na tela
+    const checkboxes = document.querySelectorAll('.rsvp-checkbox:checked');
+    const idsConfirmados = Array.from(checkboxes).map(cb => parseInt(cb.value));
+
+    if (idsConfirmados.length === 0) {
+        alert("Por favor, marque pelo menos um nome para confirmar presença.");
         btn.innerHTML = "Salvar Confirmações";
         btn.disabled = false;
+        return;
+    }
+
+    // Envia o lote de IDs selecionados para a rota /api/guests/confirm
+    fetch('/api/guests/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(idsConfirmados)
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Falha ao registrar confirmação.');
 
         // Exibe o modal bonitinho de sucesso
         const modal = new bootstrap.Modal(document.getElementById('modalSucessoRsvp'));
         modal.show();
 
-        // Limpa a tela após fechar o modal
+        // Limpa a tela após concluir
         document.getElementById('searchGuestName').value = '';
         document.getElementById('familyContainer').classList.add('d-none');
-    }, 1500);
+    })
+    .catch(error => {
+        alert('Aviso: ' + error.message);
+    })
+    .finally(() => {
+        btn.innerHTML = "Salvar Confirmações";
+        btn.disabled = false;
+    });
 }
 // ==========================================
 // MÓDULO DE PAGAMENTO: PIX E CARTÃO (PÚBLICO)
