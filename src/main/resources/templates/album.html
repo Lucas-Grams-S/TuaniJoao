@@ -51,18 +51,30 @@
                 <input type="text" id="nomeConvidado" class="form-control" placeholder="Ex: Tia Maria">
             </div>
 
-            <!-- Botão Escondido de Input File (Aciona Câmera ou Galeria) -->
-            <input type="file" id="fotoInput" accept="image/*" class="d-none">
-            <!-- Botão Grande para Acionar a Câmera -->
-            <div class="d-grid gap-2 mb-3">
-                <button type="button" id="btnEscolherFoto" class="btn btn-outline-secondary py-3 fw-bold rounded-3">
-                    📷 Tirar Foto / Escolher da Galeria
-                </button>
+            <!-- Dois Inputs Escondidos -->
+            <!-- 1. Exclusivo para câmera (apenas 1 foto por vez) -->
+            <input type="file" id="fotoCamera" accept="image/*" capture="environment" class="d-none">
+
+            <!-- 2. Exclusivo para galeria (com atributo multiple para lote) -->
+            <input type="file" id="fotoGaleria" accept="image/*, image/jpeg, image/png, image/webp" multiple class="d-none">
+
+            <!-- Dois Botões Lado a Lado -->
+            <div class="row g-2 mb-3">
+                <div class="col-6">
+                    <button type="button" id="btnAbrirCamera" class="btn btn-outline-secondary w-100 py-3 fw-bold rounded-3">
+                        📷 Tirar Foto
+                    </button>
+                </div>
+                <div class="col-6">
+                    <button type="button" id="btnAbrirGaleria" class="btn btn-outline-secondary w-100 py-3 fw-bold rounded-3">
+                        🖼️ da Galeria (Até 10)
+                    </button>
+                </div>
             </div>
 
-            <!-- Preview da Foto Selecionada -->
-            <div class="text-center mb-3">
-                <img id="previewFoto" class="img-fluid shadow-sm w-100" alt="Sua Foto">
+            <!-- Preview em Grade (Grid) para mostrar todas as selecionadas -->
+            <div id="containerPreview" class="row g-2 mb-3 d-none">
+                <!-- As miniaturas serão injetadas via JavaScript aqui -->
             </div>
 
             <!-- Botão de Enviar -->

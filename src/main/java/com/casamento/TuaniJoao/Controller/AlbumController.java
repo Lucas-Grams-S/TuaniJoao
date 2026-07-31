@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
@@ -46,45 +47,57 @@ public class AlbumController {
      */
     @PostMapping("/api/album/upload")
     @ResponseBody
-    public ResponseEntity<?> receberFoto(
-            @RequestParam("foto") MultipartFile foto,
+    public ResponseEntity<?> receberFotos(
+            @RequestParam("fotos") List<MultipartFile> fotos,
             @RequestParam(value = "nome", required = false, defaultValue = "Convidado") String nome) {
 
-        if (foto.isEmpty()) {
+        if (fotos == null || fotos.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("message", "Nenhuma foto selecionada."));
         }
 
+        // Trava de segurança no backend para no máximo 10 fotos por requisição
+        if (fotos.size() > 10) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Por favor, envie no máximo 10 fotos por vez."));
+        }
+
         try {
-            // 1. Garante que a pasta existe no caminho absoluto do sistema
             Path pastaAbsoluta = pastaUploads.toAbsolutePath().normalize();
             if (!Files.exists(pastaAbsoluta)) {
                 Files.createDirectories(pastaAbsoluta);
             }
 
-            // 2. Gera o nome único do arquivo
-            String extensao = obterExtensao(foto.getOriginalFilename());
-            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-            String nomeArquivo = "foto_" + timestamp + "_" + UUID.randomUUID().toString().substring(0, 8) + extensao;
+            int salvasComSucesso = 0;
 
-            // 3. Resolve o caminho final absoluto
-            Path caminhoFinal = pastaAbsoluta.resolve(nomeArquivo);
+            for (MultipartFile foto : fotos) {
+                if (foto.isEmpty()) continue;
 
-            // 4. Salva o arquivo diretamente no disco usando Files.copy (mais seguro que transferTo)
-            try (java.io.InputStream inputStream = foto.getInputStream()) {
-                Files.copy(inputStream, caminhoFinal, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                String extensao = obterExtensao(foto.getOriginalFilename());
+                String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+                String nomeArquivo = "foto_" + timestamp + "_" + UUID.randomUUID().toString().substring(0, 8) + extensao;
+
+                Path caminhoFinal = pastaAbsoluta.resolve(nomeArquivo);
+
+                try (java.io.InputStream inputStream = foto.getInputStream()) {
+                    Files.copy(inputStream, caminhoFinal, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    salvasComSucesso++;
+                }
             }
 
-            log.info("📸 Nova foto enviada pelo convidado '{}'! Salva em: {}", nome, caminhoFinal);
+            log.info("📸 {} foto(s) enviada(s) pelo convidado '{}'!", salvasComSucesso, nome);
+
+            String mensagemRetorno = salvasComSucesso == 1
+                    ? "1 foto enviada com sucesso para os noivos! ❤️"
+                    : salvasComSucesso + " fotos enviadas com sucesso para os noivos! ❤️";
 
             return ResponseEntity.ok(Map.of(
                     "status", "sucesso",
-                    "message", "Foto enviada com sucesso para os noivos! ❤️"
+                    "message", mensagemRetorno
             ));
 
         } catch (Exception e) {
-            log.error("❌ Erro ao salvar foto do álbum: ", e);
+            log.error("❌ Erro ao salvar fotos do álbum: ", e);
             return ResponseEntity.status(500).body(Map.of(
-                    "message", "Erro interno ao processar e salvar a foto: " + e.getMessage()
+                    "message", "Erro interno ao processar e salvar as fotos: " + e.getMessage()
             ));
         }
     }
