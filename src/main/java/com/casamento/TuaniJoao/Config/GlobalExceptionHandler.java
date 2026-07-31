@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice(annotations = RestController.class)
 public class GlobalExceptionHandler {
 
-    // 1. Trata casos de "Não Encontrado" (Erro 404)
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex) {
         log.warn("Recurso não encontrado: {}", ex.getMessage());
@@ -28,7 +27,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
-    // 2. Trata casos de "Validação ou Regra de Negócio" (Erro 400)
     @ExceptionHandler(BusinessRuleException.class)
     public ResponseEntity<ErrorResponse> handleBusinessRule(BusinessRuleException ex) {
         log.warn("Regra de negócio violada: {}", ex.getMessage());
@@ -41,7 +39,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
-    // 3. Fallback de Segurança: Captura qualquer outro erro que não prevemos (NullPointer, Banco caiu) (Erro 500)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericError(Exception ex) {
         log.error("Erro interno inesperado no servidor", ex);

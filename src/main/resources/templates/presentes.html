@@ -10,7 +10,6 @@
 </head>
 <body>
 
-<!-- NAVBAR PÚBLICA -->
 <nav class="navbar navbar-expand-lg navbar-convidados sticky-top shadow-sm">
     <div class="container">
         <a class="navbar-brand" th:href="@{/convidados/presentes}">💍 Tuani & João</a>
@@ -35,12 +34,9 @@
     </div>
 </nav>
 
-<!-- CARROSSEL DE FOTOS -->
-<!-- CARROSSEL DE FOTOS -->
 <div class="container mb-5 px-0 px-md-3">
     <div id="noivosCarousel" class="carousel slide shadow-sm" data-bs-ride="carousel">
         <div class="carousel-inner">
-            <!-- O th:each percorre as 30 fotos automaticamente -->
             <div th:each="foto, iterStat : ${fotosCarrossel}"
                  th:class="${iterStat.first} ? 'carousel-item active' : 'carousel-item'">
 
@@ -63,7 +59,6 @@
     </div>
 </div>
 
-<!-- VITRINE DE PRESENTES (ESTILO E-COMMERCE) -->
 <div class="container mb-5">
     <div class="text-center mb-5">
         <h2 style="color: var(--terracotta);">Nossa Lista de Presentes</h2>
@@ -71,7 +66,6 @@
     </div>
 
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
-        <!-- Renderiza os presentes dinamicamente -->
         <div class="col" th:each="gift : ${gifts}">
             <div class="card gift-card d-flex flex-column">
                 <div class="gift-img-container">
@@ -82,7 +76,6 @@
                     <p class="card-text text-muted small flex-grow-1" th:text="${gift.description}">Descrição</p>
                     <h4 class="gift-price mb-3" th:text="|R$ ${#numbers.formatDecimal(gift.price, 1, 'POINT', 2, 'COMMA')}|">R$ 0,00</h4>
 
-                    <!-- Botão de Comprar (Chama a função de pagamento que já temos) -->
                     <button class="btn btn-presentear w-100 mt-auto" th:onclick="'abrirOpcoesDePagamento(' + ${gift.id} + ', ' + ${gift.price} + ')'">
                         🎁 Presentear
                     </button>
@@ -90,18 +83,12 @@
             </div>
         </div>
 
-        <!-- Mensagem se a lista estiver vazia -->
         <div class="col-12 text-center py-5" th:if="${gifts == null or #lists.isEmpty(gifts)}">
             <h5 class="text-muted">Os noivos estão preparando a lista com muito carinho. Volte em breve!</h5>
         </div>
     </div>
 </div>
 
-<!-- ========================================================= -->
-<!-- MODAIS DE PAGAMENTO (PIX E CARTÃO)                        -->
-<!-- ========================================================= -->
-
-<!-- MODAL DE ESCOLHA DE PAGAMENTO -->
 <div class="modal fade" id="modalEscolhaPagamento" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content text-center">
@@ -109,7 +96,6 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4 pt-2">
-                <!-- Guardamos os dados aqui temporariamente -->
                 <input type="hidden" id="escolhaGiftId">
                 <input type="hidden" id="escolhaGiftPrice">
 
@@ -129,7 +115,6 @@
     </div>
 </div>
 
-<!-- MODAL 1: Coleta de Dados do Convidado -->
 <div class="modal fade" id="dadosConvidadoModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -166,7 +151,6 @@
     </div>
 </div>
 
-<!-- MODAL 2: Exibição do QR Code do Pix -->
 <div class="modal fade" id="pixModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -188,7 +172,6 @@
     </div>
 </div>
 
-<!-- MODAL 3: Pagamento Seguro por Cartão de Crédito -->
 <div class="modal fade" id="modalCartao" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -205,16 +188,14 @@
                     <textarea id="guestCartaoMessage" class="form-control" rows="2" placeholder="Opcional"></textarea>
                 </div>
 
-                <!-- O Mercado Pago vai desenhar o formulário do cartão DENTRO desta div -->
                 <div id="cardPaymentBrick_container"></div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Scripts Necessários -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://sdk.mercadopago.com/js/v2"></script> <!-- SDK DO MERCADO PAGO -->
-<script th:src="@{/js/convidados.js}"></script> <!-- SEU SCRIPT DE CONVIDADOS -->
+<script src="https://sdk.mercadopago.com/js/v2"></script>
+<script th:src="@{/js/convidados.js}"></script>
 </body>
 </html>

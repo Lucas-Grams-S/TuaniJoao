@@ -24,7 +24,6 @@ public class GuestService {
 
     private final GuestRepository guestRepository;
 
-    // Utilitário para remover acentos
     private String removerAcentos(String str) {
         if (str == null) return "";
         String normalizado = Normalizer.normalize(str, Normalizer.Form.NFD);
@@ -37,7 +36,6 @@ public class GuestService {
         return guestRepository.findAll();
     }
 
-    // Busca normalizada ignorando acentos e maiúsculas/minúsculas
     public List<Guest> findByName(String name) {
         log.info("Buscando convidados ignorando acentos. Termo: {}", name);
         String termoBuscaLimpo = removerAcentos(name);
@@ -51,7 +49,6 @@ public class GuestService {
         return guestRepository.save(guest);
     }
 
-    // Novo método de exclusão
     public void deleteGuest(Long id) {
         log.info("Excluindo convidado ID: {}", id);
         if (!guestRepository.existsById(id)) {

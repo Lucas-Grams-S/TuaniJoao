@@ -42,7 +42,6 @@ public class CasamentoController {
      */
     @GetMapping("/orders")
     public String verHistoricoPedidos(Model model) {
-        // Busca todos os pedidos ordenados pelos mais recentes primeiro
         model.addAttribute("orders", orderService.findAllOrders());
         return "painel-noivos-list-orders"; // Aponta para o novo template que criaremos no Passo 2
     }

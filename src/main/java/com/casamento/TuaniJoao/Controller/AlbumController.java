@@ -1,7 +1,6 @@
 package com.casamento.TuaniJoao.Controller;
 
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -27,7 +26,6 @@ import org.springframework.web.multipart.MultipartFile;
 @Controller
 public class AlbumController {
 
-    // Pasta onde as fotos dos convidados serão salvas no disco/Docker
     private final Path pastaUploads = Paths.get("uploads/album-convidados");
 
     public AlbumController() {
@@ -43,7 +41,7 @@ public class AlbumController {
      */
     @GetMapping("/convidados/album")
     public String telaAlbumConvidados() {
-        return "album"; // Aponta para templates/album.html
+        return "album";
     }
 
     /**
@@ -59,7 +57,6 @@ public class AlbumController {
             return ResponseEntity.badRequest().body(Map.of("message", "Nenhuma foto selecionada."));
         }
 
-        // Trava de segurança no backend para no máximo 10 fotos por requisição
         if (fotos.size() > 10) {
             return ResponseEntity.badRequest().body(Map.of("message", "Por favor, envie no máximo 10 fotos por vez."));
         }
@@ -115,23 +112,19 @@ public class AlbumController {
         try {
             Path pastaAbsoluta = pastaUploads.toAbsolutePath().normalize();
 
-            // Verificação caso nenhuma foto tenha sido enviada ainda
             if (!Files.exists(pastaAbsoluta) || Files.list(pastaAbsoluta).findAny().isEmpty()) {
                 response.setContentType("text/plain; charset=UTF-8");
                 response.getWriter().write("Ainda não há fotos enviadas para baixar no álbum!");
                 return;
             }
 
-            // Configura os cabeçalhos para o navegador iniciar o download do arquivo .zip
             String nomeArquivoZip = "album-casamento-tuani-joao.zip";
             response.setContentType("application/zip");
             response.setHeader("Content-Disposition", "attachment; filename=\"" + nomeArquivoZip + "\"");
 
-            // Cria o fluxo de compactação ZIP direto na resposta HTTP
             try (OutputStream out = response.getOutputStream();
                  ZipOutputStream zipOut = new ZipOutputStream(out)) {
 
-                // Percorre todos os arquivos da pasta e adiciona dentro do ZIP
                 Files.list(pastaAbsoluta).forEach(caminhoArquivo -> {
                     if (Files.isRegularFile(caminhoArquivo)) {
                         try {
@@ -159,6 +152,6 @@ public class AlbumController {
         if (nomeOriginal != null && nomeOriginal.contains(".")) {
             return nomeOriginal.substring(nomeOriginal.lastIndexOf("."));
         }
-        return ".jpg"; // Padrão caso não identifique
+        return ".jpg";
     }
 }

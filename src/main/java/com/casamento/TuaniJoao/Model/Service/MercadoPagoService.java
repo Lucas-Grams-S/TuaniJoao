@@ -44,7 +44,6 @@ public class MercadoPagoService {
                         .build())
                 .build();
 
-        // Passamos as opções com o X-Idempotency-Key
         return client.create(request, createIdempotencyOptions());
     }
 
@@ -68,7 +67,6 @@ public class MercadoPagoService {
                         .build())
                 .build();
 
-        // Passamos as opções com o X-Idempotency-Key
         return client.create(request, createIdempotencyOptions());
     }
 }

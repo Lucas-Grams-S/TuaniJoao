@@ -1,6 +1,15 @@
 package com.casamento.TuaniJoao.Model.Entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
@@ -8,7 +17,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "orders") // "order" é palavra reservada no SQL, por isso usamos "orders"
+@Table(name = "orders")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,11 +27,9 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Identificador único da transação devolvido pelo Mercado Pago
     @Column(name = "mp_payment_id", unique = true)
     private String mpPaymentId;
 
-    // Dados do Convidado
     @Column(nullable = false)
     private String guestName;
 
@@ -35,7 +42,6 @@ public class Order {
     @Column(length = 500)
     private String message;
 
-    // Dados do Presente
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "gift_id", nullable = false)
     private Gift gift;
@@ -44,9 +50,8 @@ public class Order {
     private BigDecimal amount;
 
     @Column(nullable = false)
-    private String paymentMethod; // "PIX" ou "CREDIT_CARD"
+    private String paymentMethod;
 
-    // PENDENTE, APROVADO, RECUSADO, CANCELADO
     @Column(nullable = false)
     private String status;
 

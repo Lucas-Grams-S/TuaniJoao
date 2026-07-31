@@ -1,36 +1,20 @@
-/**
- * LÓGICA DE APRESENTAÇÃO (MOCK) PARA AVALIAÇÃO DOS NOIVOS
- * Substituiremos isso pelas chamadas reais da API (fetch) na próxima fase.
- */
-
-// ==========================================
-// MÓDULO DE CONFIRMAÇÃO DE PRESENÇA (RSVP)
-// ==========================================
-
 let searchTimeout = null;
 
-/**
- * Função acionada pelo evento oninput enquanto o usuário digita.
- * Utiliza Debounce para aguardar 400ms após a última tecla digitada.
- */
 function onSearchInputChange() {
     const nomeBusca = document.getElementById('searchGuestName').value.trim();
     const feedback = document.getElementById('searchFeedback');
     const container = document.getElementById('familyContainer');
 
-    // Se o usuário apagar o texto ou deixar menos de 3 letras, oculta os resultados
     if (nomeBusca.length < 3) {
         feedback.classList.add('d-none');
         container.classList.add('d-none');
         return;
     }
 
-    // Cancela a busca anterior se o usuário ainda estiver digitando
     if (searchTimeout) {
         clearTimeout(searchTimeout);
     }
 
-    // Agenda a busca para 400ms após a última tecla pressionada
     searchTimeout = setTimeout(() => {
         buscarFamiliaVisual();
     }, 400);
@@ -45,7 +29,6 @@ function buscarFamiliaVisual() {
     feedback.classList.add('d-none');
     container.classList.add('d-none');
 
-    // Mínimo de caracteres para evitar buscar a lista inteira com uma única letra
     if (nomeBusca.length < 3) {
         feedback.innerText = "Por favor, digite pelo menos 3 letras do seu nome.";
         feedback.classList.remove('d-none');
@@ -66,7 +49,6 @@ function buscarFamiliaVisual() {
                 return;
             }
 
-            // Desenha os checkboxes na tela
             convidados.forEach(convidado => {
                 const checkedStr = convidado.isConfirmed ? "checked" : "";
                 const html = `
@@ -131,20 +113,13 @@ function salvarRsvpVisual() {
         btn.disabled = false;
     });
 }
-// ==========================================
-// MÓDULO DE PAGAMENTO: PIX E CARTÃO (PÚBLICO)
-// ==========================================
 
-// Inicializa o Mercado Pago
 const mp = new MercadoPago('APP_USR-8e5905b4-85c5-42c9-82bc-2bd4f12cec59', {
     locale: 'pt-BR'
 });
 const bricksBuilder = mp.bricks();
 let cardPaymentBrickController;
 
-// 1. Função que abre as opções de pagamento
-// No botão do HTML, vamos chamar esta função para o convidado escolher como quer pagar.
-// 1. Abre o modal bonito de escolha e guarda os valores
 function abrirOpcoesDePagamento(giftId, price) {
     document.getElementById('escolhaGiftId').value = giftId;
     document.getElementById('escolhaGiftPrice').value = price;
@@ -153,30 +128,23 @@ function abrirOpcoesDePagamento(giftId, price) {
     modal.show();
 }
 
-// 2. Se o usuário escolher PIX
 function escolherPix() {
     const giftId = document.getElementById('escolhaGiftId').value;
 
-    // Esconde o modal de escolha
     bootstrap.Modal.getInstance(document.getElementById('modalEscolhaPagamento')).hide();
 
-    // Abre o fluxo do Pix
     abrirModalPix(giftId);
 }
 
-// 3. Se o usuário escolher CARTÃO
 function escolherCartao() {
     const giftId = document.getElementById('escolhaGiftId').value;
     const price = document.getElementById('escolhaGiftPrice').value;
 
-    // Esconde o modal de escolha
     bootstrap.Modal.getInstance(document.getElementById('modalEscolhaPagamento')).hide();
 
-    // Abre o fluxo do Cartão
     abrirModalCartao(giftId, price);
 }
 
-// ---------------- FLUXO DO PIX ----------------
 function abrirModalPix(giftId) {
     document.getElementById('modalGiftId').value = giftId;
     document.getElementById('guestName').value = '';
@@ -242,7 +210,6 @@ function copiarPix() {
     alert("Copiado com sucesso!");
 }
 
-// ---------------- FLUXO DO CARTÃO ----------------
 function abrirModalCartao(giftId, price) {
     document.getElementById('modalCartaoGiftId').value = giftId;
     document.getElementById('guestCartaoMessage').value = '';

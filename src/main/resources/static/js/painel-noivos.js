@@ -58,7 +58,7 @@ function removeGiftFromList(index) {
 
 function renderTable() {
     const tbody = document.getElementById('giftsTableBody');
-    if(!tbody) return; // Proteção para telas que não têm a tabela
+    if(!tbody) return;
 
     tbody.innerHTML = '';
     if (stagedGifts.length === 0) {
@@ -149,19 +149,9 @@ function showAlert(message, bootstrapClass) {
     alertBox.classList.remove('d-none');
 }
 
-// ==========================================
-// MÓDULO DE PAGAMENTOS (TESTES)
-// ==========================================
-
-// ==========================================
-// MÓDULO DE PAGAMENTOS (TESTES)
-// ==========================================
-
-// 1. Abre o modal e guarda o ID do presente de forma oculta
 function abrirModalDadosPessoais(giftId) {
     document.getElementById('modalGiftId').value = giftId;
 
-    // Limpa o formulário caso tenha sujeira de um teste anterior
     document.getElementById('guestName').value = '';
     document.getElementById('guestEmail').value = '';
     document.getElementById('guestCpf').value = '';
@@ -171,7 +161,6 @@ function abrirModalDadosPessoais(giftId) {
     modal.show();
 }
 
-// 2. Coleta os dados, envia pro Java e abre o Pix
 function confirmarDadosEGerarPix() {
     const giftId = document.getElementById('modalGiftId').value;
     const name = document.getElementById('guestName').value.trim();
@@ -189,12 +178,11 @@ function confirmarDadosEGerarPix() {
     btnElement.innerHTML = '⏳ Gerando Pix...';
     btnElement.disabled = true;
 
-    // Objeto que reflete exatamente o DTO do Java
     const payload = { name, email, cpf, message };
 
     fetch(`/api/payments/pix/${giftId}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }, // Diz ao Java que estamos enviando JSON
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
     })
     .then(async response => {
@@ -203,10 +191,8 @@ function confirmarDadosEGerarPix() {
         return data;
     })
     .then(data => {
-        // Esconde o modal de dados
         bootstrap.Modal.getInstance(document.getElementById('dadosConvidadoModal')).hide();
 
-        // Alimenta e exibe o modal do QR Code
         document.getElementById('pixQrCodeImg').src = 'data:image/png;base64,' + data.qrCodeBase64;
         document.getElementById('pixCopiaCola').value = data.qrCodeCopiaECola;
 
@@ -222,14 +208,8 @@ function confirmarDadosEGerarPix() {
     });
 }
 
-// ==========================================
-// MÓDULO DE PAGAMENTO: CARTÃO DE CRÉDITO
-// ==========================================
-
-// Inicializa o Mercado Pago com a sua CHAVE PÚBLICA (Public Key)
-// Substitua pela sua chave pública que começa por TEST-
 const mp = new MercadoPago('TEST-83921b7f-5e2a-40f2-b7f7-44ab671f6299', {
-    locale: 'pt-BR' // Mantemos pt-BR para o formato de CPF e Cartões brasileiros funcionarem bem
+    locale: 'pt-BR'
 });
 const bricksBuilder = mp.bricks();
 let cardPaymentBrickController;
@@ -247,15 +227,13 @@ function abrirModalCartao(giftId, price) {
 const renderCardPaymentBrick = async (amount) => {
     const settings = {
         initialization: {
-            amount: amount, // Valor do presente
+            amount: amount,
         },
         callbacks: {
             onReady: () => {
-                // O formulário está pronto no ecrã
                 console.log("Formulário de cartão carregado.");
             },
             onSubmit: (cardFormData) => {
-                // Quando o utilizador clica em "Pagar", o MP intercepta, encripta e devolve os dados aqui
                 return processarPagamentoCartao(cardFormData);
             },
             onError: (error) => {
@@ -264,7 +242,6 @@ const renderCardPaymentBrick = async (amount) => {
         },
     };
 
-    // Previne que o formulário seja renderizado duas vezes se fechar e abrir o modal
     if (cardPaymentBrickController) {
         cardPaymentBrickController.unmount();
     }
@@ -281,13 +258,12 @@ function processarPagamentoCartao(cardFormData) {
         const giftId = document.getElementById('modalCartaoGiftId').value;
         const mensagem = document.getElementById('guestCartaoMessage').value.trim();
 
-        // Mapeia os dados devolvidos pelo MP para o nosso DTO do Java
         const payload = {
             name: cardFormData.payer.first_name || "Convidado Teste",
             email: cardFormData.payer.email,
             cpf: cardFormData.payer.identification.number,
             message: mensagem,
-            token: cardFormData.token, // O segredo encriptado do cartão!
+            token: cardFormData.token,
             paymentMethodId: cardFormData.payment_method_id,
             installments: cardFormData.installments
         };
@@ -311,7 +287,7 @@ function processarPagamentoCartao(cardFormData) {
         })
         .catch(error => {
             alert('Aviso: ' + error.message);
-            reject(); // Avisa o Brick do Mercado Pago que falhou, para ele restaurar o botão de pagar
+            reject();
         });
     });
 }
@@ -324,16 +300,10 @@ function copiarPix() {
     alert("Copiado com sucesso!");
 }
 
-// ==========================================
-// MÓDULO DE CONVIDADOS (ADMIN)
-// ==========================================
-
 function abrirModalExcluirConvidado(id, name) {
-    // Alimenta o modal com os dados do convidado clicado
     document.getElementById('deleteGuestId').value = id;
     document.getElementById('deleteGuestName').innerText = name;
 
-    // Exibe o modal na tela
     const modal = new bootstrap.Modal(document.getElementById('modalExcluirConvidado'));
     modal.show();
 }
@@ -351,7 +321,6 @@ function confirmarExclusaoConvidado() {
     .then(response => {
         if (!response.ok) throw new Error('Falha ao excluir o convidado.');
 
-        // Recarrega a página para a tabela atualizar automaticamente sem o convidado
         window.location.reload();
     })
     .catch(error => {
@@ -361,15 +330,11 @@ function confirmarExclusaoConvidado() {
     });
 }
 
-/**
- * Exclui um presente no Banco de Dados via API REST
- */
 async function excluirPresente(id, botao) {
     if (!confirm('Tem certeza que deseja excluir este presente da lista pública do casamento?')) {
         return;
     }
 
-    // Trava o botão visualmente durante o envio
     botao.disabled = true;
     botao.textContent = '⏳...';
 
@@ -379,17 +344,14 @@ async function excluirPresente(id, botao) {
         });
 
         if (resposta.ok || resposta.status === 204) {
-            // Captura a linha da tabela (<tr>)
             const linha = botao.closest('tr');
 
-            // Efeito visual de esvanecer antes de remover do HTML
             linha.style.transition = 'opacity 0.4s ease';
             linha.style.opacity = '0';
 
             setTimeout(() => {
                 linha.remove();
 
-                // Se a tabela ficar vazia após remover, recarrega para exibir a mensagem "Nenhum presente na lista"
                 const tbody = document.querySelector('table tbody');
                 if (tbody && tbody.children.length === 0) {
                     location.reload();

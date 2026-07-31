@@ -9,6 +9,7 @@ public class WebSecurityConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
+        //TODO: configurar o dominio quando tiver
         registry.addMapping("/api/**")
                 // Se no futuro vocês registrarem um domínio (ex: www.tuaniejoao.com.br), troque o asterisco por ele
                 .allowedOrigins("*")

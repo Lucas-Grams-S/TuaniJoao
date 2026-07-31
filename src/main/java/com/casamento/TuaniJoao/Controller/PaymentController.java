@@ -27,7 +27,7 @@ public class PaymentController {
 
     private final GiftService giftService;
     private final MercadoPagoService mercadoPagoService;
-    private final OrderService orderService; // <-- INJETADO AQUI PARA REGISTRO DE PEDIDOS
+    private final OrderService orderService;
 
     @PostMapping("/pix/{giftId}")
     public ResponseEntity<?> criarPagamentoPix(@PathVariable Long giftId, @RequestBody GuestPaymentDTO payerInfo) {
@@ -47,7 +47,6 @@ public class PaymentController {
 
             log.info("✅ Pix gerado com sucesso no Mercado Pago! ID Transação: {}", paymentId);
 
-            // ---> GRAVAÇÃO DO PEDIDO NO BANCO DE DADOS COMO "PENDENTE"
             orderService.createOrder(
                     gift,
                     payerInfo.getName(),
@@ -91,7 +90,6 @@ public class PaymentController {
 
             log.info("✅ Resposta do Cartão recebida! Status: {}", payment.getStatus());
 
-            // Traduzindo os status do MP para a nossa base ("approved" -> "APROVADO", etc.)
             String statusFinal = "PENDENTE";
             if ("approved".equalsIgnoreCase(payment.getStatus())) {
                 statusFinal = "APROVADO";
@@ -99,7 +97,6 @@ public class PaymentController {
                 statusFinal = "RECUSADO";
             }
 
-            // ---> GRAVAÇÃO DO PEDIDO NO BANCO DE DADOS
             orderService.createOrder(
                     gift,
                     cardInfo.getName(),
@@ -145,17 +142,12 @@ public class PaymentController {
         log.info("🔔 Webhook acionado pelo Mercado Pago! Tipo: {} | ID: {}", type, paymentId);
 
         try {
-            // Verificamos se é uma notificação do tipo "payment"
             if ("payment".equalsIgnoreCase(type) && paymentId != null) {
 
-                // Em um cenário de produção real, faríamos um GET no Mercado Pago aqui
-                // para conferir o status autenticado do pagamento.
-                // Por agora, marcamos diretamente o pedido como APROVADO:
                 orderService.updateOrderStatusByMpId(paymentId, "APROVADO");
                 log.info("✅ Pedido transação MP '{}' atualizado para APROVADO via Webhook!", paymentId);
             }
 
-            // O Mercado Pago exige resposta 200 ou 201 rápida para não ficar reenviando o alerta
             return ResponseEntity.ok().build();
 
         } catch (Exception e) {

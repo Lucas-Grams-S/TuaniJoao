@@ -2,10 +2,8 @@ package com.casamento.TuaniJoao.Controller;
 
 import com.casamento.TuaniJoao.Model.Entity.Gift;
 import com.casamento.TuaniJoao.Model.Service.GiftService;
-import java.io.File;
 import java.util.ArrayList;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePatternResolver;
@@ -17,13 +15,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import java.util.List;
 
 @Controller
-@RequestMapping("/convidados") // Path centralizado para os convidados
+@RequestMapping("/convidados")
 public class GuestPublicController {
 
     @Autowired
     private GiftService giftService;
 
-    // 🎁 Rota 1: /convidados/presentes
     @GetMapping("/presentes")
     public String telaPublicaPresentes(Model model) {
         List<Gift> gifts = giftService.findAllGifts();
@@ -32,14 +29,12 @@ public class GuestPublicController {
         return "presentes"; // Aponta para o templates/presentes.html
     }
 
-    // ✅ Rota 2: /convidados/confirmar-presenca (Faremos a tela a seguir)
     @GetMapping("/confirmar-presenca")
     public String telaPublicaRsvp(Model model) {
         model.addAttribute("fotosCarrossel", listarFotosCarrossel());
         return "rsvp";
     }
 
-    // ℹ️ Rota 3: /convidados/informacoes (Faremos a tela a seguir)
     @GetMapping("/informacoes")
     public String telaPublicaInformacoes(Model model) {
         model.addAttribute("fotosCarrossel", listarFotosCarrossel());
@@ -51,7 +46,6 @@ public class GuestPublicController {
         try {
             ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
 
-            // Busca arquivos com qualquer extensão dentro de static/images/carrossel
             Resource[] resources = resolver.getResources("classpath*:static/images/*.*");
 
             for (Resource resource : resources) {

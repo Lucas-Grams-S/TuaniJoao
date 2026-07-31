@@ -12,7 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/guests") // Define o caminho base para todas as rotas deste controller
+@RequestMapping("/api/guests")
 @RequiredArgsConstructor
 public class GuestController {
 
@@ -27,7 +27,6 @@ public class GuestController {
         log.info("Buscando convidados com nome contendo: {}", name);
         List<Guest> guests = guestService.findByName(name);
 
-        // Se a lista estiver vazia, o Spring retorna um array vazio [] com status 200 (OK)
         return ResponseEntity.ok(guests);
     }
 
@@ -41,7 +40,6 @@ public class GuestController {
         log.info("Confirmando presença para os convidados com IDs: {}", ids);
         guestService.confirmAttendanceBatch(ids);
 
-        // Retorna status 200 (OK) sem corpo, indicando que a operação foi um sucesso
         return ResponseEntity.ok().build();
     }
 
@@ -76,7 +74,6 @@ public class GuestController {
         log.info("Requisição recebida para excluir convidado ID: {}", id);
         guestService.deleteGuest(id);
 
-        // Retorna 204 No Content (sucesso sem corpo de resposta)
         return ResponseEntity.noContent().build();
     }
 }

@@ -10,7 +10,6 @@
 </head>
 <body>
 
-<!-- NAVBAR PÚBLICA -->
 <nav class="navbar navbar-expand-lg navbar-convidados sticky-top shadow-sm">
     <div class="container">
         <a class="navbar-brand" th:href="@{/convidados/presentes}">💍 Tuani & João</a>
@@ -35,12 +34,10 @@
     </div>
 </nav>
 
-<!-- CARROSSEL DE FOTOS -->
 <div class="container mb-5 px-0 px-md-3">
     <div id="noivosCarousel" class="carousel slide shadow-sm" data-bs-ride="carousel">
         <div class="carousel-inner">
             <div class="carousel-inner">
-                <!-- O th:each percorre as 30 fotos automaticamente -->
                 <div th:each="foto, iterStat : ${fotosCarrossel}"
                      th:class="${iterStat.first} ? 'carousel-item active' : 'carousel-item'">
 
@@ -63,7 +60,6 @@
     </div>
 </div>
 
-<!-- MURAL DE INFORMAÇÕES -->
 <div class="container mb-5">
     <div class="text-center mb-5">
         <h2 style="color: var(--terracotta);">Tudo o que você precisa saber</h2>
@@ -71,7 +67,6 @@
     </div>
 
     <div class="row g-4">
-        <!-- Card: Local e Horário -->
         <div class="col-md-6">
             <div class="card h-100 shadow-sm border-0" style="border-top: 4px solid var(--periwinkle) !important;">
                 <div class="card-body p-4 text-center">
@@ -87,7 +82,6 @@
             </div>
         </div>
 
-        <!-- Card: Dress Code -->
         <div class="col-md-6">
             <div class="card h-100 shadow-sm border-0" style="border-top: 4px solid var(--dusty-rose) !important;">
                 <div class="card-body p-4 text-center">
@@ -100,7 +94,6 @@
             </div>
         </div>
 
-        <!-- Card: Nossa História -->
         <div class="col-12">
             <div class="card shadow-sm border-0" style="background-color: var(--sage-green); color: white;">
                 <div class="card-body p-5 text-center">

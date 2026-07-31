@@ -35,29 +35,22 @@
 <body class="bg-light">
 
 <div class="container py-4">
-    <!-- Botão voltar / Cabeçalho -->
     <div class="text-center mb-4">
         <h3 class="mt-2 fw-bold" style="color: var(--slate-blue, #4a5568);">📸 Mural dos Noivos</h3>
         <p class="text-muted small">Compartilhe sua foto com a Tuani e o João!</p>
     </div>
 
-    <!-- Card Principal de Upload -->
     <div class="card shadow-sm border-0 album-card p-4">
         <form id="formAlbum">
-            <!-- Campo de Nome (Opcional) -->
             <div class="mb-3">
                 <label for="nomeConvidado" class="form-label small text-muted">Seu nome (opcional):</label>
                 <input type="text" id="nomeConvidado" class="form-control" placeholder="Ex: Tia Maria">
             </div>
 
-            <!-- Dois Inputs Escondidos -->
-            <!-- 1. Exclusivo para câmera (apenas 1 foto por vez) -->
             <input type="file" id="fotoCamera" accept="image/*" capture="environment" class="d-none">
 
-            <!-- 2. Exclusivo para galeria (com atributo multiple para lote) -->
             <input type="file" id="fotoGaleria" accept="image/*, image/jpeg, image/png, image/webp" multiple class="d-none">
 
-            <!-- Dois Botões Lado a Lado -->
             <div class="row g-2 mb-3">
                 <div class="col-6">
                     <button type="button" id="btnAbrirCamera" class="btn btn-outline-secondary w-100 py-3 fw-bold rounded-3">
@@ -71,12 +64,9 @@
                 </div>
             </div>
 
-            <!-- Preview em Grade (Grid) para mostrar todas as selecionadas -->
             <div id="containerPreview" class="row g-2 mb-3 d-none">
-                <!-- As miniaturas serão injetadas via JavaScript aqui -->
             </div>
 
-            <!-- Botão de Enviar -->
             <div class="d-grid gap-2">
                 <button type="submit" id="btnEnviar" class="btn btn-upload shadow-sm d-none">
                     🚀 Enviar para os Noivos!
@@ -84,7 +74,6 @@
             </div>
         </form>
 
-        <!-- Mensagem de Sucesso / Erro -->
         <div id="mensagemStatus" class="alert mt-3 d-none text-center small mb-0" role="alert"></div>
     </div>
 </div>
@@ -99,18 +88,15 @@
     const formAlbum = document.getElementById('formAlbum');
     const mensagemStatus = document.getElementById('mensagemStatus');
 
-    // Lista que armazenará os arquivos comprimidos prontos para enviar
     let fotosComprimidasParaEnvio = [];
 
     btnAbrirCamera.addEventListener('click', () => fotoCamera.click());
     btnAbrirGaleria.addEventListener('click', () => fotoGaleria.click());
 
-    // Função que processa tanto a câmera quanto a galeria
     const processarFotosEscolhidas = async function(event) {
         let arquivos = Array.from(event.target.files);
         if (arquivos.length === 0) return;
 
-        // Validação de máximo de 10 fotos
         if (arquivos.length > 10) {
             alert('Você selecionou ' + arquivos.length + ' fotos. Escolha no máximo 10 fotos por vez!');
             event.target.value = '';
@@ -128,12 +114,10 @@
             containerPreview.innerHTML = '';
             containerPreview.classList.remove('d-none');
 
-            // Comprime cada imagem em paralelo/loop
             for (let i = 0; i < arquivos.length; i++) {
                 const fotoOtimizada = await comprimirImagem(arquivos[i], 1600, 0.8);
                 fotosComprimidasParaEnvio.push(fotoOtimizada);
 
-                // Cria a miniatura visual no HTML
                 const urlPreview = URL.createObjectURL(fotoOtimizada);
                 const colDiv = document.createElement('div');
                 colDiv.className = 'col-4 col-sm-3 text-center';
@@ -165,7 +149,6 @@
     fotoCamera.addEventListener('change', processarFotosEscolhidas);
     fotoGaleria.addEventListener('change', processarFotosEscolhidas);
 
-    // Envio do formulário
     formAlbum.addEventListener('submit', async function(event) {
         event.preventDefault();
 
@@ -173,7 +156,6 @@
 
         const formData = new FormData();
         fotosComprimidasParaEnvio.forEach((foto, index) => {
-            // O nome do parâmetro deve ser "fotos" (mesmo nome no Java @RequestParam("fotos"))
             formData.append('fotos', foto, `foto_album_${index}.jpg`);
         });
         formData.append('nome', document.getElementById('nomeConvidado').value || 'Convidado');
@@ -214,7 +196,6 @@
         }
     });
 
-    // Função de compressão nativa via Canvas (inalterada, super rápida!)
     function comprimirImagem(arquivo, ladoMaximo, qualidade) {
         return new Promise((resolve, reject) => {
             const leitor = new FileReader();
