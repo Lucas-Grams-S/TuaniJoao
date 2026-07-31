@@ -55,15 +55,26 @@ public class AlbumController {
         }
 
         try {
-            // Gera um nome único para o arquivo não sobrescrever outros
+            // 1. Garante que a pasta existe no caminho absoluto do sistema
+            Path pastaAbsoluta = pastaUploads.toAbsolutePath().normalize();
+            if (!Files.exists(pastaAbsoluta)) {
+                Files.createDirectories(pastaAbsoluta);
+            }
+
+            // 2. Gera o nome único do arquivo
             String extensao = obterExtensao(foto.getOriginalFilename());
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
             String nomeArquivo = "foto_" + timestamp + "_" + UUID.randomUUID().toString().substring(0, 8) + extensao;
 
-            Path caminhoFinal = pastaUploads.resolve(nomeArquivo);
-            foto.transferTo(caminhoFinal.toFile());
+            // 3. Resolve o caminho final absoluto
+            Path caminhoFinal = pastaAbsoluta.resolve(nomeArquivo);
 
-            log.info("📸 Nova foto enviada pelo convidado '{}'! Salva em: {}", nome, nomeArquivo);
+            // 4. Salva o arquivo diretamente no disco usando Files.copy (mais seguro que transferTo)
+            try (java.io.InputStream inputStream = foto.getInputStream()) {
+                Files.copy(inputStream, caminhoFinal, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+
+            log.info("📸 Nova foto enviada pelo convidado '{}'! Salva em: {}", nome, caminhoFinal);
 
             return ResponseEntity.ok(Map.of(
                     "status", "sucesso",
@@ -73,7 +84,7 @@ public class AlbumController {
         } catch (Exception e) {
             log.error("❌ Erro ao salvar foto do álbum: ", e);
             return ResponseEntity.status(500).body(Map.of(
-                    "message", "Erro interno ao processar e salvar a foto."
+                    "message", "Erro interno ao processar e salvar a foto: " + e.getMessage()
             ));
         }
     }
