@@ -37,7 +37,6 @@
 <div class="container py-4">
     <!-- Botão voltar / Cabeçalho -->
     <div class="text-center mb-4">
-        <a th:href="@{/convidados/informacoes}" class="text-decoration-none text-muted small">← Voltar para o site</a>
         <h3 class="mt-2 fw-bold" style="color: var(--slate-blue, #4a5568);">📸 Mural dos Noivos</h3>
         <p class="text-muted small">Compartilhe sua foto com a Tuani e o João!</p>
     </div>
@@ -91,60 +90,96 @@
 </div>
 
 <script>
-    const fotoInput = document.getElementById('fotoInput');
-    const btnEscolherFoto = document.getElementById('btnEscolherFoto');
-    const previewFoto = document.getElementById('previewFoto');
+    const fotoCamera = document.getElementById('fotoCamera');
+    const fotoGaleria = document.getElementById('fotoGaleria');
+    const btnAbrirCamera = document.getElementById('btnAbrirCamera');
+    const btnAbrirGaleria = document.getElementById('btnAbrirGaleria');
+    const containerPreview = document.getElementById('containerPreview');
     const btnEnviar = document.getElementById('btnEnviar');
     const formAlbum = document.getElementById('formAlbum');
     const mensagemStatus = document.getElementById('mensagemStatus');
 
-    let arquivoComprimidoParaEnvio = null;
+    // Lista que armazenará os arquivos comprimidos prontos para enviar
+    let fotosComprimidasParaEnvio = [];
 
-    // 1. Ao clicar no botão visível, aciona o input file escondido
-    btnEscolherFoto.addEventListener('click', () => {
-        fotoInput.click();
-    });
+    btnAbrirCamera.addEventListener('click', () => fotoCamera.click());
+    btnAbrirGaleria.addEventListener('click', () => fotoGaleria.click());
 
-    // 2. Quando o convidado escolhe/tira a foto, nós COMPRIMIMOS antes do preview
-    fotoInput.addEventListener('change', async function() {
-        const arquivoOriginal = this.files[0];
-        if (!arquivoOriginal) return;
+    // Função que processa tanto a câmera quanto a galeria
+    const processarFotosEscolhidas = async function(event) {
+        let arquivos = Array.from(event.target.files);
+        if (arquivos.length === 0) return;
 
-        btnEscolherFoto.disabled = true;
-        btnEscolherFoto.textContent = '⏳ Otimizando foto...';
+        // Validação de máximo de 10 fotos
+        if (arquivos.length > 10) {
+            alert('Você selecionou ' + arquivos.length + ' fotos. Escolha no máximo 10 fotos por vez!');
+            event.target.value = '';
+            return;
+        }
+
+        btnAbrirCamera.disabled = true;
+        btnAbrirGaleria.disabled = true;
+        btnAbrirCamera.textContent = '⏳...';
+        btnAbrirGaleria.textContent = '⏳...';
+        mensagemStatus.classList.add('d-none');
 
         try {
-            // Comprime a foto no celular para no máximo 1600px e 80% de qualidade
-            arquivoComprimidoParaEnvio = await comprimirImagem(arquivoOriginal, 1600, 0.8);
+            fotosComprimidasParaEnvio = [];
+            containerPreview.innerHTML = '';
+            containerPreview.classList.remove('d-none');
 
-            // Mostra o preview otimizado
-            const urlPreview = URL.createObjectURL(arquivoComprimidoParaEnvio);
-            previewFoto.src = urlPreview;
-            previewFoto.style.display = 'block';
+            // Comprime cada imagem em paralelo/loop
+            for (let i = 0; i < arquivos.length; i++) {
+                const fotoOtimizada = await comprimirImagem(arquivos[i], 1600, 0.8);
+                fotosComprimidasParaEnvio.push(fotoOtimizada);
+
+                // Cria a miniatura visual no HTML
+                const urlPreview = URL.createObjectURL(fotoOtimizada);
+                const colDiv = document.createElement('div');
+                colDiv.className = 'col-4 col-sm-3 text-center';
+                colDiv.innerHTML = `
+                    <img src="${urlPreview}" class="img-fluid shadow-sm rounded-2"
+                         style="height: 90px; width: 100%; object-fit: cover;">
+                `;
+                containerPreview.appendChild(colDiv);
+            }
+
             btnEnviar.classList.remove('d-none');
-            mensagemStatus.classList.add('d-none');
+            const textoBotao = fotosComprimidasParaEnvio.length === 1
+                ? '🚀 Enviar 1 Foto para os Noivos!'
+                : `🚀 Enviar ${fotosComprimidasParaEnvio.length} Fotos para os Noivos!`;
+            btnEnviar.textContent = textoBotao;
+
         } catch (erro) {
-            alert('Não foi possível processar a foto. Tente novamente.');
+            alert('Não foi possível processar as fotos. Tente novamente.');
             console.error(erro);
         } finally {
-            btnEscolherFoto.disabled = false;
-            btnEscolherFoto.textContent = '🔄 Escolher outra foto';
+            btnAbrirCamera.disabled = false;
+            btnAbrirGaleria.disabled = false;
+            btnAbrirCamera.textContent = '📷 Tirar Foto';
+            btnAbrirGaleria.textContent = '🖼️ da Galeria (Até 10)';
+            event.target.value = ''; // Limpa o input para permitir selecionar as mesmas depois se quiser
         }
-    });
+    };
 
-    // 3. Envia a FOTO COMPRIMIDA via Fetch
+    fotoCamera.addEventListener('change', processarFotosEscolhidas);
+    fotoGaleria.addEventListener('change', processarFotosEscolhidas);
+
+    // Envio do formulário
     formAlbum.addEventListener('submit', async function(event) {
         event.preventDefault();
 
-        if (!arquivoComprimidoParaEnvio) return;
+        if (fotosComprimidasParaEnvio.length === 0) return;
 
         const formData = new FormData();
-        // Envia o arquivo leve otimizado ao invés de fotoInput.files[0]
-        formData.append('foto', arquivoComprimidoParaEnvio, 'foto_album.jpg');
+        fotosComprimidasParaEnvio.forEach((foto, index) => {
+            // O nome do parâmetro deve ser "fotos" (mesmo nome no Java @RequestParam("fotos"))
+            formData.append('fotos', foto, `foto_album_${index}.jpg`);
+        });
         formData.append('nome', document.getElementById('nomeConvidado').value || 'Convidado');
 
         btnEnviar.disabled = true;
-        btnEnviar.textContent = '⏳ Enviando foto...';
+        btnEnviar.textContent = '⏳ Enviando fotos...';
 
         try {
             const resposta = await fetch('/api/album/upload', {
@@ -161,28 +196,25 @@
 
                 setTimeout(() => {
                     formAlbum.reset();
-                    previewFoto.style.display = 'none';
+                    containerPreview.innerHTML = '';
+                    containerPreview.classList.add('d-none');
                     btnEnviar.classList.add('d-none');
-                    btnEscolherFoto.textContent = '📷 Tirar outra foto';
                     btnEnviar.disabled = false;
-                    btnEnviar.textContent = '🚀 Enviar para os Noivos!';
-                    arquivoComprimidoParaEnvio = null;
+                    fotosComprimidasParaEnvio = [];
                 }, 3000);
             } else {
-                throw new Error(dados.message || 'Erro ao enviar foto.');
+                throw new Error(dados.message || 'Erro ao enviar fotos.');
             }
         } catch (erro) {
             mensagemStatus.className = 'alert alert-danger mt-3 text-center small mb-0';
-            mensagemStatus.textContent = 'Não foi possível enviar a foto. Tente novamente.';
+            mensagemStatus.textContent = 'Não foi possível enviar as fotos. Tente novamente.';
             mensagemStatus.classList.remove('d-none');
             btnEnviar.disabled = false;
             btnEnviar.textContent = '🚀 Enviar para os Noivos!';
         }
     });
 
-    /**
-     * Função auxiliar: Redimensiona e comprime imagem direto no navegador (Canvas)
-     */
+    // Função de compressão nativa via Canvas (inalterada, super rápida!)
     function comprimirImagem(arquivo, ladoMaximo, qualidade) {
         return new Promise((resolve, reject) => {
             const leitor = new FileReader();
@@ -194,7 +226,6 @@
                     let largura = img.width;
                     let altura = img.height;
 
-                    // Redimensiona mantendo a proporção da imagem
                     if (largura > altura) {
                         if (largura > ladoMaximo) {
                             altura = Math.round((altura * ladoMaximo) / largura);
@@ -214,7 +245,6 @@
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, largura, altura);
 
-                    // Converte o canvas para um arquivo Blob (JPEG otimizado)
                     canvas.toBlob(
                         (blob) => {
                             if (blob) {
