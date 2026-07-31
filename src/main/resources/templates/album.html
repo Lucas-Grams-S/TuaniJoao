@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Álbum Colaborativo - Tuani & João</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link th:href="@{/css/convidados.css}" rel="stylesheet">
+    <style>
+        .album-card {
+            max-width: 450px;
+            margin: 0 auto;
+            border-radius: 16px;
+        }
+        .btn-upload {
+            background-color: var(--terracotta, #c86d51);
+            color: white;
+            font-weight: bold;
+            padding: 14px;
+            border-radius: 50px;
+            border: none;
+        }
+        .btn-upload:hover {
+            background-color: #b05c42;
+            color: white;
+        }
+        #previewFoto {
+            max-height: 280px;
+            object-fit: cover;
+            border-radius: 12px;
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+<div class="container py-4">
+    <!-- Botão voltar / Cabeçalho -->
+    <div class="text-center mb-4">
+        <a th:href="@{/convidados/informacoes}" class="text-decoration-none text-muted small">← Voltar para o site</a>
+        <h3 class="mt-2 fw-bold" style="color: var(--slate-blue, #4a5568);">📸 Mural dos Noivos</h3>
+        <p class="text-muted small">Compartilhe sua foto com a Tuani e o João!</p>
+    </div>
+
+    <!-- Card Principal de Upload -->
+    <div class="card shadow-sm border-0 album-card p-4">
+        <form id="formAlbum">
+            <!-- Campo de Nome (Opcional) -->
+            <div class="mb-3">
+                <label for="nomeConvidado" class="form-label small text-muted">Seu nome (opcional):</label>
+                <input type="text" id="nomeConvidado" class="form-control" placeholder="Ex: Tia Maria">
+            </div>
+
+            <!-- Botão Escondido de Input File (Aciona Câmera ou Galeria) -->
+            <input type="file" id="fotoInput" accept="image/*" capture="environment" class="d-none">
+
+            <!-- Botão Grande para Acionar a Câmera -->
+            <div class="d-grid gap-2 mb-3">
+                <button type="button" id="btnEscolherFoto" class="btn btn-outline-secondary py-3 fw-bold rounded-3">
+                    📷 Tirar Foto / Escolher da Galeria
+                </button>
+            </div>
+
+            <!-- Preview da Foto Selecionada -->
+            <div class="text-center mb-3">
+                <img id="previewFoto" class="img-fluid shadow-sm w-100" alt="Sua Foto">
+            </div>
+
+            <!-- Botão de Enviar -->
+            <div class="d-grid gap-2">
+                <button type="submit" id="btnEnviar" class="btn btn-upload shadow-sm d-none">
+                    🚀 Enviar para os Noivos!
+                </button>
+            </div>
+        </form>
+
+        <!-- Mensagem de Sucesso / Erro -->
+        <div id="mensagemStatus" class="alert mt-3 d-none text-center small mb-0" role="alert"></div>
+    </div>
+</div>
+
+<script>
+    const fotoInput = document.getElementById('fotoInput');
+    const btnEscolherFoto = document.getElementById('btnEscolherFoto');
+    const previewFoto = document.getElementById('previewFoto');
+    const btnEnviar = document.getElementById('btnEnviar');
+    const formAlbum = document.getElementById('formAlbum');
+    const mensagemStatus = document.getElementById('mensagemStatus');
+
+    // Ao clicar no botão visível, aciona o input file escondido
+    btnEscolherFoto.addEventListener('click', () => {
+        fotoInput.click();
+    });
+
+    // Mostra o preview assim que o convidado escolhe/tira a foto
+    fotoInput.addEventListener('change', function() {
+        const arquivo = this.files[0];
+        if (arquivo) {
+            const urlPreview = URL.createObjectURL(arquivo);
+            previewFoto.src = urlPreview;
+            previewFoto.style.display = 'block';
+            btnEnviar.classList.remove('d-none');
+            btnEscolherFoto.textContent = '🔄 Escolher outra foto';
+            mensagemStatus.classList.add('d-none');
+        }
+    });
+
+    // Envia via Fetch sem recarregar a página
+    formAlbum.addEventListener('submit', async function(event) {
+        event.preventDefault();
+
+        if (!fotoInput.files[0]) return;
+
+        const formData = new FormData();
+        formData.append('foto', fotoInput.files[0]);
+        formData.append('nome', document.getElementById('nomeConvidado').value || 'Convidado');
+
+        btnEnviar.disabled = true;
+        btnEnviar.textContent = '⏳ Enviando foto...';
+
+        try {
+            const resposta = await fetch('/api/album/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            const dados = await resposta.json();
+
+            if (resposta.ok) {
+                mensagemStatus.className = 'alert alert-success mt-3 text-center small mb-0';
+                mensagemStatus.textContent = dados.message;
+                mensagemStatus.classList.remove('d-none');
+
+                // Reseta o formulário para poder tirar outra
+                setTimeout(() => {
+                    formAlbum.reset();
+                    previewFoto.style.display = 'none';
+                    btnEnviar.classList.add('d-none');
+                    btnEscolherFoto.textContent = '📷 Tirar outra foto';
+                    btnEnviar.disabled = false;
+                    btnEnviar.textContent = '🚀 Enviar para os Noivos!';
+                }, 3000);
+            } else {
+                throw new Error(dados.message || 'Erro ao enviar foto.');
+            }
+        } catch (erro) {
+            mensagemStatus.className = 'alert alert-danger mt-3 text-center small mb-0';
+            mensagemStatus.textContent = 'Não foi possível enviar a foto. Tente novamente.';
+            mensagemStatus.classList.remove('d-none');
+            btnEnviar.disabled = false;
+            btnEnviar.textContent = '🚀 Enviar para os Noivos!';
+        }
+    });
+</script>
+</body>
+</html>
