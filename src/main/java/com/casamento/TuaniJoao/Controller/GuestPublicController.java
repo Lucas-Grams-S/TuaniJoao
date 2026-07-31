@@ -52,7 +52,7 @@ public class GuestPublicController {
             ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
 
             // Busca arquivos com qualquer extensão dentro de static/images/carrossel
-            Resource[] resources = resolver.getResources("classpath*:static/images/carrossel*.*");
+            Resource[] resources = resolver.getResources("classpath*:static/images/*.*");
 
             for (Resource resource : resources) {
                 String nome = resource.getFilename();
@@ -60,7 +60,7 @@ public class GuestPublicController {
                     String lower = nome.toLowerCase();
                     if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") ||
                             lower.endsWith(".png") || lower.endsWith(".webp")) {
-                        fotos.add("/images/carrossel/" + nome);
+                        fotos.add("/images/" + nome);
                     }
                 }
             }
