@@ -6,6 +6,9 @@ import java.io.File;
 import java.util.ArrayList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,23 +49,22 @@ public class GuestPublicController {
     private List<String> listarFotosCarrossel() {
         List<String> fotos = new ArrayList<>();
         try {
-            // Aponta para a pasta static/images/carrossel
-            File pasta = new ClassPathResource("static/images").getFile();
-            if (pasta.exists() && pasta.isDirectory()) {
-                File[] arquivos = pasta.listFiles();
-                if (arquivos != null) {
-                    for (File arquivo : arquivos) {
-                        // Filtra apenas arquivos de imagem
-                        String nome = arquivo.getName().toLowerCase();
-                        if (nome.endsWith(".jpg") || nome.endsWith(".jpeg") ||
-                                nome.endsWith(".png") || nome.endsWith(".webp")) {
-                            fotos.add("/images/" + arquivo.getName());
-                        }
+            ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+
+            // Busca arquivos com qualquer extensão dentro de static/images/carrossel
+            Resource[] resources = resolver.getResources("classpath*:static/images/carrossel/*.*");
+
+            for (Resource resource : resources) {
+                String nome = resource.getFilename();
+                if (nome != null) {
+                    String lower = nome.toLowerCase();
+                    if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") ||
+                            lower.endsWith(".png") || lower.endsWith(".webp")) {
+                        fotos.add("/images/carrossel/" + nome);
                     }
                 }
             }
         } catch (Exception e) {
-            // Se a pasta não for encontrada ou estiver vazia, evita quebrar a tela
             System.out.println("Aviso: Não foi possível ler a pasta do carrossel: " + e.getMessage());
         }
         return fotos;
