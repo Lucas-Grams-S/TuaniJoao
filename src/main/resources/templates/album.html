@@ -52,8 +52,7 @@
             </div>
 
             <!-- Botão Escondido de Input File (Aciona Câmera ou Galeria) -->
-            <input type="file" id="fotoInput" accept="image/*" capture="environment" class="d-none">
-
+            <input type="file" id="fotoInput" accept="image/*" class="d-none">
             <!-- Botão Grande para Acionar a Câmera -->
             <div class="d-grid gap-2 mb-3">
                 <button type="button" id="btnEscolherFoto" class="btn btn-outline-secondary py-3 fw-bold rounded-3">
@@ -87,32 +86,49 @@
     const formAlbum = document.getElementById('formAlbum');
     const mensagemStatus = document.getElementById('mensagemStatus');
 
-    // Ao clicar no botão visível, aciona o input file escondido
+    let arquivoComprimidoParaEnvio = null;
+
+    // 1. Ao clicar no botão visível, aciona o input file escondido
     btnEscolherFoto.addEventListener('click', () => {
         fotoInput.click();
     });
 
-    // Mostra o preview assim que o convidado escolhe/tira a foto
-    fotoInput.addEventListener('change', function() {
-        const arquivo = this.files[0];
-        if (arquivo) {
-            const urlPreview = URL.createObjectURL(arquivo);
+    // 2. Quando o convidado escolhe/tira a foto, nós COMPRIMIMOS antes do preview
+    fotoInput.addEventListener('change', async function() {
+        const arquivoOriginal = this.files[0];
+        if (!arquivoOriginal) return;
+
+        btnEscolherFoto.disabled = true;
+        btnEscolherFoto.textContent = '⏳ Otimizando foto...';
+
+        try {
+            // Comprime a foto no celular para no máximo 1600px e 80% de qualidade
+            arquivoComprimidoParaEnvio = await comprimirImagem(arquivoOriginal, 1600, 0.8);
+
+            // Mostra o preview otimizado
+            const urlPreview = URL.createObjectURL(arquivoComprimidoParaEnvio);
             previewFoto.src = urlPreview;
             previewFoto.style.display = 'block';
             btnEnviar.classList.remove('d-none');
-            btnEscolherFoto.textContent = '🔄 Escolher outra foto';
             mensagemStatus.classList.add('d-none');
+        } catch (erro) {
+            alert('Não foi possível processar a foto. Tente novamente.');
+            console.error(erro);
+        } finally {
+            btnEscolherFoto.disabled = false;
+            btnEscolherFoto.textContent = '🔄 Escolher outra foto';
         }
     });
 
-    // Envia via Fetch sem recarregar a página
+    // 3. Envia a FOTO COMPRIMIDA via Fetch
     formAlbum.addEventListener('submit', async function(event) {
         event.preventDefault();
 
-        if (!fotoInput.files[0]) return;
+        if (!arquivoComprimidoParaEnvio) return;
 
         const formData = new FormData();
-        formData.append('foto', fotoInput.files[0]);
+        // Envia o arquivo leve otimizado ao invés de fotoInput.files[0]
+        formData.append('foto', arquivoComprimidoParaEnvio, 'foto_album.jpg');
         formData.append('nome', document.getElementById('nomeConvidado').value || 'Convidado');
 
         btnEnviar.disabled = true;
@@ -131,7 +147,6 @@
                 mensagemStatus.textContent = dados.message;
                 mensagemStatus.classList.remove('d-none');
 
-                // Reseta o formulário para poder tirar outra
                 setTimeout(() => {
                     formAlbum.reset();
                     previewFoto.style.display = 'none';
@@ -139,6 +154,7 @@
                     btnEscolherFoto.textContent = '📷 Tirar outra foto';
                     btnEnviar.disabled = false;
                     btnEnviar.textContent = '🚀 Enviar para os Noivos!';
+                    arquivoComprimidoParaEnvio = null;
                 }, 3000);
             } else {
                 throw new Error(dados.message || 'Erro ao enviar foto.');
@@ -151,6 +167,59 @@
             btnEnviar.textContent = '🚀 Enviar para os Noivos!';
         }
     });
+
+    /**
+     * Função auxiliar: Redimensiona e comprime imagem direto no navegador (Canvas)
+     */
+    function comprimirImagem(arquivo, ladoMaximo, qualidade) {
+        return new Promise((resolve, reject) => {
+            const leitor = new FileReader();
+            leitor.readAsDataURL(arquivo);
+            leitor.onload = function(event) {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = function() {
+                    let largura = img.width;
+                    let altura = img.height;
+
+                    // Redimensiona mantendo a proporção da imagem
+                    if (largura > altura) {
+                        if (largura > ladoMaximo) {
+                            altura = Math.round((altura * ladoMaximo) / largura);
+                            largura = ladoMaximo;
+                        }
+                    } else {
+                        if (altura > ladoMaximo) {
+                            largura = Math.round((largura * ladoMaximo) / altura);
+                            altura = ladoMaximo;
+                        }
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = largura;
+                    canvas.height = altura;
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, largura, altura);
+
+                    // Converte o canvas para um arquivo Blob (JPEG otimizado)
+                    canvas.toBlob(
+                        (blob) => {
+                            if (blob) {
+                                resolve(new File([blob], 'foto_comprimida.jpg', { type: 'image/jpeg' }));
+                            } else {
+                                reject(new Error('Erro na compressão do canvas.'));
+                            }
+                        },
+                        'image/jpeg',
+                        qualidade
+                    );
+                };
+                img.onerror = (erro) => reject(erro);
+            };
+            leitor.onerror = (erro) => reject(erro);
+        });
+    }
 </script>
 </body>
 </html>
