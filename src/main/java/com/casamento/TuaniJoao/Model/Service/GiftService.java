@@ -63,4 +63,17 @@ public class GiftService {
         log.info("URL da foto atualizada para o presente '{}': {}", gift.getName(), photoUrl);
         return repository.save(gift);
     }
+    /**
+     * Exclui um presente cadastrado no banco pelo ID.
+     */
+    public void deleteGift(Long id) {
+        log.info("Excluindo presente com ID: {}", id);
+        if (!repository.existsById(id)) {
+            log.error("Presente não encontrado com ID: {}", id);
+            throw new ResourceNotFoundException("Presente não encontrado com o ID: " + id);
+        }
+        repository.deleteById(id);
+        log.info("Presente com ID {} excluído com sucesso", id);
+    }
+
 }

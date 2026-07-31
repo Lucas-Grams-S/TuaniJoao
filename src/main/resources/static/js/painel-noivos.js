@@ -360,3 +360,49 @@ function confirmarExclusaoConvidado() {
         btnExcluir.innerText = 'Sim, Excluir';
     });
 }
+
+/**
+ * Exclui um presente no Banco de Dados via API REST
+ */
+async function excluirPresente(id, botao) {
+    if (!confirm('Tem certeza que deseja excluir este presente da lista pública do casamento?')) {
+        return;
+    }
+
+    // Trava o botão visualmente durante o envio
+    botao.disabled = true;
+    botao.textContent = '⏳...';
+
+    try {
+        const resposta = await fetch(`/api/gifts/${id}`, {
+            method: 'DELETE'
+        });
+
+        if (resposta.ok || resposta.status === 204) {
+            // Captura a linha da tabela (<tr>)
+            const linha = botao.closest('tr');
+
+            // Efeito visual de esvanecer antes de remover do HTML
+            linha.style.transition = 'opacity 0.4s ease';
+            linha.style.opacity = '0';
+
+            setTimeout(() => {
+                linha.remove();
+
+                // Se a tabela ficar vazia após remover, recarrega para exibir a mensagem "Nenhum presente na lista"
+                const tbody = document.querySelector('table tbody');
+                if (tbody && tbody.children.length === 0) {
+                    location.reload();
+                }
+            }, 400);
+
+        } else {
+            const erroTxt = await resposta.text();
+            throw new Error(erroTxt || 'Erro interno ao tentar excluir.');
+        }
+    } catch (erro) {
+        alert('Não foi possível excluir o presente: ' + erro.message);
+        botao.disabled = false;
+        botao.textContent = '🗑️ Excluir';
+    }
+}

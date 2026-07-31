@@ -7,6 +7,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -66,5 +67,16 @@ public class GiftController {
     public ResponseEntity<Gift> createGift(@RequestBody Gift gift) {
         log.info("Recebendo presente para cadastro: {}", gift.getName());
         return ResponseEntity.ok(giftService.saveGift(gift));
+    }
+
+    /**
+     * Rota para excluir um presente pelo ID (Admin).
+     * Exemplo de uso: DELETE /api/gifts/1
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteGift(@PathVariable Long id) {
+        log.info("Recebendo requisição para excluir o presente com ID: {}", id);
+        giftService.deleteGift(id);
+        return ResponseEntity.noContent().build();
     }
 }
