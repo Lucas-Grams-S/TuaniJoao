@@ -47,8 +47,8 @@
                 <img th:src="@{${foto}}"
                      class="d-block w-100"
                      th:alt="|Foto dos Noivos ${iterStat.count}|"
-                     th:attr="fetchpriority=${iterStat.first ? 'high' : null},
-                      loading=${!iterStat.first ? 'lazy' : null}"
+                     th:attr="fetchpriority=${iterStat.first ? 'high' : 'low'},
+              loading=${!iterStat.first ? 'lazy' : 'eager'}"
                      decoding="async">
             </div>
         </div>

@@ -52,7 +52,7 @@ public class GuestPublicController {
             ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
 
             // Busca arquivos com qualquer extensão dentro de static/images/carrossel
-            Resource[] resources = resolver.getResources("classpath*:static/images/carrossel/*.*");
+            Resource[] resources = resolver.getResources("classpath*:static/images/carrossel*.*");
 
             for (Resource resource : resources) {
                 String nome = resource.getFilename();

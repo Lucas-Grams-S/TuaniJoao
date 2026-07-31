@@ -2,6 +2,13 @@ spring:
   application:
     name: TuaniJoao
 
+  web:
+    resources:
+      cache:
+        period: 604800
+      chain:
+        cache: true
+
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:casamentodb}
     username: ${DB_USER:tuani_joao_local}
