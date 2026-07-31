@@ -1,7 +1,9 @@
 package com.casamento.TuaniJoao.Controller;
 
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -10,6 +12,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -99,6 +103,55 @@ public class AlbumController {
             return ResponseEntity.status(500).body(Map.of(
                     "message", "Erro interno ao processar e salvar as fotos: " + e.getMessage()
             ));
+        }
+    }
+
+    /**
+     * 📦 GERA E FAZ DOWNLOAD DO ÁLBUM COMPLETO EM FORMATO .ZIP
+     * Acessível em: /painel-noivos/album/download-zip
+     */
+    @GetMapping("/painel-noivos/album/download-zip")
+    public void baixarTodasFotosZip(HttpServletResponse response) {
+        try {
+            Path pastaAbsoluta = pastaUploads.toAbsolutePath().normalize();
+
+            // Verificação caso nenhuma foto tenha sido enviada ainda
+            if (!Files.exists(pastaAbsoluta) || Files.list(pastaAbsoluta).findAny().isEmpty()) {
+                response.setContentType("text/plain; charset=UTF-8");
+                response.getWriter().write("Ainda não há fotos enviadas para baixar no álbum!");
+                return;
+            }
+
+            // Configura os cabeçalhos para o navegador iniciar o download do arquivo .zip
+            String nomeArquivoZip = "album-casamento-tuani-joao.zip";
+            response.setContentType("application/zip");
+            response.setHeader("Content-Disposition", "attachment; filename=\"" + nomeArquivoZip + "\"");
+
+            // Cria o fluxo de compactação ZIP direto na resposta HTTP
+            try (OutputStream out = response.getOutputStream();
+                 ZipOutputStream zipOut = new ZipOutputStream(out)) {
+
+                // Percorre todos os arquivos da pasta e adiciona dentro do ZIP
+                Files.list(pastaAbsoluta).forEach(caminhoArquivo -> {
+                    if (Files.isRegularFile(caminhoArquivo)) {
+                        try {
+                            ZipEntry entry = new ZipEntry(caminhoArquivo.getFileName().toString());
+                            zipOut.putNextEntry(entry);
+                            Files.copy(caminhoArquivo, zipOut);
+                            zipOut.closeEntry();
+                        } catch (IOException e) {
+                            log.error("Erro ao adicionar arquivo {} no ZIP: ", caminhoArquivo.getFileName(), e);
+                        }
+                    }
+                });
+
+                zipOut.finish();
+            }
+
+            log.info("📦 Download do ZIP do álbum concluído com sucesso!");
+
+        } catch (Exception e) {
+            log.error("❌ Erro ao gerar o arquivo ZIP do álbum: ", e);
         }
     }
 
