@@ -114,7 +114,7 @@ function salvarRsvpVisual() {
     });
 }
 
-const mp = new MercadoPago('APP_USR-8e5905b4-85c5-42c9-82bc-2bd4f12cec59', {
+const mp = new MercadoPago('APP_USR-e0bef998-5617-4e87-9edb-f0fadf6d0817', {
     locale: 'pt-BR'
 });
 const bricksBuilder = mp.bricks();
