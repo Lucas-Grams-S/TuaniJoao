@@ -31,7 +31,7 @@ function uploadPhoto(input) {
     })
     .catch(error => {
         spinner.classList.add('d-none');
-        alert('Erro ao fazer upload: ' + error.message);
+        showGiftAlert('Erro ao fazer upload: ' + error.message, 'alert-danger');
     });
 }
 
@@ -99,19 +99,28 @@ function saveGiftsBatch() {
         body: JSON.stringify(stagedGifts)
     })
     .then(async response => {
-        if (!response.ok) throw new Error('Falha no servidor.');
+        if (!response.ok) throw new Error('Falha no servidor ao salvar lote.');
         return response.json();
     })
     .then(data => {
-        alert(`Sucesso! l{data.length} presentes salvos.`);
+        const qtd = data ? data.length : stagedGifts.length;
+        showGiftAlert(`🎉 <strong>Sucesso!</strong> ${qtd} presente(s) salvo(s) com sucesso na lista do casamento.`, 'alert-success');
         stagedGifts = [];
         renderTable();
     })
     .catch(error => {
-        alert('Aviso: ' + error.message);
+        showGiftAlert('Aviso: ' + error.message, 'alert-danger');
         btnSave.disabled = false;
         renderTable();
     });
+}
+
+function showGiftAlert(message, bootstrapClass) {
+    const alertBox = document.getElementById('giftAlert');
+    if(!alertBox) return;
+    alertBox.className = `alert ${bootstrapClass} mt-3 shadow-sm`;
+    alertBox.innerHTML = message;
+    alertBox.classList.remove('d-none');
 }
 
 function uploadCsvGuests() {
@@ -144,8 +153,8 @@ function uploadCsvGuests() {
 function showAlert(message, bootstrapClass) {
     const alertBox = document.getElementById('csvAlert');
     if(!alertBox) return;
-    alertBox.className = `alert ${bootstrapClass} mt-3`;
-    alertBox.innerText = message;
+    alertBox.className = `alert ${bootstrapClass} mt-3 shadow-sm`;
+    alertBox.innerHTML = message;
     alertBox.classList.remove('d-none');
 }
 
@@ -208,10 +217,17 @@ function confirmarDadosEGerarPix() {
     });
 }
 
-const mp = new MercadoPago('TEST-83921b7f-5e2a-40f2-b7f7-44ab671f6299', {
-    locale: 'pt-BR'
-});
-const bricksBuilder = mp.bricks();
+// Configuração segura do Mercado Pago (Só inicializa se a biblioteca estiver presente na página)
+let mp = null;
+let bricksBuilder = null;
+
+if (typeof MercadoPago !== 'undefined') {
+    mp = new MercadoPago('TEST-83921b7f-5e2a-40f2-b7f7-44ab671f6299', {
+        locale: 'pt-BR'
+    });
+    bricksBuilder = mp.bricks();
+}
+
 let cardPaymentBrickController;
 
 function abrirModalCartao(giftId, price) {
@@ -225,6 +241,8 @@ function abrirModalCartao(giftId, price) {
 }
 
 const renderCardPaymentBrick = async (amount) => {
+    if (!bricksBuilder) return;
+
     const settings = {
         initialization: {
             amount: amount,
