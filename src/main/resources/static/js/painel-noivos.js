@@ -1,5 +1,30 @@
 let stagedGifts = [];
 
+// Função global para gerar alertas flutuantes bonitos em QUALQUER página
+function showStylishAlert(message, type = 'success') {
+    let alertContainer = document.getElementById('global-alert-container');
+    if (!alertContainer) {
+        alertContainer = document.createElement('div');
+        alertContainer.id = 'global-alert-container';
+        alertContainer.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px; max-width: 400px;';
+        document.body.appendChild(alertContainer);
+    }
+
+    const alertEl = document.createElement('div');
+    alertEl.className = `alert alert-${type} alert-dismissible fade show shadow-lg`;
+    alertEl.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    alertContainer.appendChild(alertEl);
+
+    // Auto-destruição do alerta após 5 segundos
+    setTimeout(() => {
+        alertEl.classList.remove('show');
+        setTimeout(() => alertEl.remove(), 150);
+    }, 5000);
+}
+
 function uploadPhoto(input) {
     const file = input.files[0];
     if (!file) return;
@@ -8,9 +33,9 @@ function uploadPhoto(input) {
     const successText = document.getElementById('uploadSuccess');
     const btnAdd = document.getElementById('btnAddToList');
 
-    spinner.classList.remove('d-none');
-    successText.classList.add('d-none');
-    btnAdd.disabled = true;
+    if(spinner) spinner.classList.remove('d-none');
+    if(successText) successText.classList.add('d-none');
+    if(btnAdd) btnAdd.disabled = true;
 
     const formData = new FormData();
     formData.append('file', file);
@@ -25,13 +50,13 @@ function uploadPhoto(input) {
     })
     .then(photoUrl => {
         document.getElementById('giftPhotoUrl').value = photoUrl;
-        spinner.classList.add('d-none');
-        successText.classList.remove('d-none');
-        btnAdd.disabled = false;
+        if(spinner) spinner.classList.add('d-none');
+        if(successText) successText.classList.remove('d-none');
+        if(btnAdd) btnAdd.disabled = false;
     })
     .catch(error => {
-        spinner.classList.add('d-none');
-        showGiftAlert('Erro ao fazer upload: ' + error.message, 'alert-danger');
+        if(spinner) spinner.classList.add('d-none');
+        showStylishAlert('Erro ao fazer upload: ' + error.message, 'danger');
     });
 }
 
@@ -46,7 +71,9 @@ function addGiftToList(event) {
     stagedGifts.push(gift);
 
     document.getElementById('giftForm').reset();
-    document.getElementById('uploadSuccess').classList.add('d-none');
+    const successText = document.getElementById('uploadSuccess');
+    if(successText) successText.classList.add('d-none');
+
     document.getElementById('btnAddToList').disabled = true;
     renderTable();
 }
@@ -71,7 +98,7 @@ function renderTable() {
     stagedGifts.forEach((gift, index) => {
         const row = `
             <tr>
-                <td><img src="${gift.photoUrl}" class="preview-img" alt="Preview" style="width:50px; height:50px; object-fit:cover;"></td>
+                <td><img src="${gift.photoUrl}" class="preview-img" alt="Preview" style="width:50px; height:50px; object-fit:cover; border-radius:4px;"></td>
                 <td><strong>${gift.name}</strong></td>
                 <td>R$ ${gift.price.toFixed(2)}</td>
                 <td class="text-truncate" style="max-width: 200px;">${gift.description || '-'}</td>
@@ -99,40 +126,34 @@ function saveGiftsBatch() {
         body: JSON.stringify(stagedGifts)
     })
     .then(async response => {
-        if (!response.ok) throw new Error('Falha no servidor ao salvar lote.');
+        if (!response.ok) throw new Error('Falha no servidor.');
         return response.json();
     })
     .then(data => {
         const qtd = data ? data.length : stagedGifts.length;
-        showGiftAlert(`🎉 <strong>Sucesso!</strong> ${qtd} presente(s) salvo(s) com sucesso na lista do casamento.`, 'alert-success');
+        showStylishAlert(`🎉 <strong>Sucesso!</strong> ${qtd} presentes salvos no catálogo.`, 'success');
         stagedGifts = [];
         renderTable();
     })
     .catch(error => {
-        showGiftAlert('Aviso: ' + error.message, 'alert-danger');
+        showStylishAlert('Aviso: ' + error.message, 'warning');
         btnSave.disabled = false;
         renderTable();
     });
 }
 
-function showGiftAlert(message, bootstrapClass) {
-    const alertBox = document.getElementById('giftAlert');
-    if(!alertBox) return;
-    alertBox.className = `alert ${bootstrapClass} mt-3 shadow-sm`;
-    alertBox.innerHTML = message;
-    alertBox.classList.remove('d-none');
-}
-
 function uploadCsvGuests() {
     const fileInput = document.getElementById('csvFile');
+    if(!fileInput) return;
     const file = fileInput.files[0];
+
     if (!file) {
-        showAlert('Selecione um arquivo.', 'alert-danger');
+        showStylishAlert('Selecione um arquivo .csv primeiro.', 'warning');
         return;
     }
     const formData = new FormData();
     formData.append('file', file);
-    showAlert('Processando...', 'alert-info');
+    showStylishAlert('⏳ Processando arquivo...', 'info');
 
     fetch('/api/guests/upload-csv', {
         method: 'POST',
@@ -144,18 +165,10 @@ function uploadCsvGuests() {
         return text;
     })
     .then(message => {
-        showAlert('🎉 ' + message, 'alert-success');
+        showStylishAlert('🎉 ' + message, 'success');
         fileInput.value = '';
     })
-    .catch(error => showAlert('Erro: ' + error.message, 'alert-danger'));
-}
-
-function showAlert(message, bootstrapClass) {
-    const alertBox = document.getElementById('csvAlert');
-    if(!alertBox) return;
-    alertBox.className = `alert ${bootstrapClass} mt-3 shadow-sm`;
-    alertBox.innerHTML = message;
-    alertBox.classList.remove('d-none');
+    .catch(error => showStylishAlert('Erro: ' + error.message, 'danger'));
 }
 
 function abrirModalDadosPessoais(giftId) {
@@ -178,7 +191,7 @@ function confirmarDadosEGerarPix() {
     const message = document.getElementById('guestMessage').value.trim();
 
     if (!name || !email || !cpf) {
-        alert("Por favor, preencha Nome, E-mail e CPF para prosseguir.");
+        showStylishAlert("⚠️ Por favor, preencha Nome, E-mail e CPF para prosseguir.", "warning");
         return;
     }
 
@@ -209,7 +222,7 @@ function confirmarDadosEGerarPix() {
         pixModal.show();
     })
     .catch(error => {
-        alert('Falha na comunicação com o Mercado Pago: ' + error.message);
+        showStylishAlert('Falha na comunicação com o Mercado Pago: ' + error.message, 'danger');
     })
     .finally(() => {
         btnElement.innerHTML = textoOriginal;
@@ -217,7 +230,6 @@ function confirmarDadosEGerarPix() {
     });
 }
 
-// Configuração segura do Mercado Pago (Só inicializa se a biblioteca estiver presente na página)
 let mp = null;
 let bricksBuilder = null;
 
@@ -244,19 +256,11 @@ const renderCardPaymentBrick = async (amount) => {
     if (!bricksBuilder) return;
 
     const settings = {
-        initialization: {
-            amount: amount,
-        },
+        initialization: { amount: amount },
         callbacks: {
-            onReady: () => {
-                console.log("Formulário de cartão carregado.");
-            },
-            onSubmit: (cardFormData) => {
-                return processarPagamentoCartao(cardFormData);
-            },
-            onError: (error) => {
-                console.warn("Aviso interno do Mercado Pago: ", error.message);
-            },
+            onReady: () => { console.log("Formulário de cartão carregado."); },
+            onSubmit: (cardFormData) => { return processarPagamentoCartao(cardFormData); },
+            onError: (error) => { console.warn("Aviso interno do Mercado Pago: ", error.message); },
         },
     };
 
@@ -264,11 +268,7 @@ const renderCardPaymentBrick = async (amount) => {
         cardPaymentBrickController.unmount();
     }
 
-    cardPaymentBrickController = await bricksBuilder.create(
-        "cardPayment",
-        "cardPaymentBrick_container",
-        settings
-    );
+    cardPaymentBrickController = await bricksBuilder.create("cardPayment", "cardPaymentBrick_container", settings);
 };
 
 function processarPagamentoCartao(cardFormData) {
@@ -296,7 +296,7 @@ function processarPagamentoCartao(cardFormData) {
             if (!response.ok) throw new Error(data.message || 'Falha ao processar pagamento.');
 
             if(data.status === "approved") {
-                alert("🎉 Pagamento Aprovado com Sucesso! O ID da transação é: " + data.paymentId);
+                showStylishAlert("🎉 Pagamento Aprovado com Sucesso! O ID da transação é: " + data.paymentId, "success");
                 bootstrap.Modal.getInstance(document.getElementById('modalCartao')).hide();
                 resolve();
             } else {
@@ -304,7 +304,7 @@ function processarPagamentoCartao(cardFormData) {
             }
         })
         .catch(error => {
-            alert('Aviso: ' + error.message);
+            showStylishAlert('Aviso: ' + error.message, 'warning');
             reject();
         });
     });
@@ -315,7 +315,7 @@ function copiarPix() {
     inputPix.select();
     inputPix.setSelectionRange(0, 99999);
     navigator.clipboard.writeText(inputPix.value);
-    alert("Copiado com sucesso!");
+    showStylishAlert("📋 Código Pix copiado com sucesso!", "info");
 }
 
 function abrirModalExcluirConvidado(id, name) {
@@ -333,16 +333,13 @@ function confirmarExclusaoConvidado() {
     btnExcluir.disabled = true;
     btnExcluir.innerText = 'Excluindo...';
 
-    fetch(`/api/guests/${id}`, {
-        method: 'DELETE'
-    })
+    fetch(`/api/guests/${id}`, { method: 'DELETE' })
     .then(response => {
         if (!response.ok) throw new Error('Falha ao excluir o convidado.');
-
         window.location.reload();
     })
     .catch(error => {
-        alert('Aviso: ' + error.message);
+        showStylishAlert('Aviso: ' + error.message, 'danger');
         btnExcluir.disabled = false;
         btnExcluir.innerText = 'Sim, Excluir';
     });
@@ -357,31 +354,28 @@ async function excluirPresente(id, botao) {
     botao.textContent = '⏳...';
 
     try {
-        const resposta = await fetch(`/api/gifts/${id}`, {
-            method: 'DELETE'
-        });
+        const resposta = await fetch(`/api/gifts/${id}`, { method: 'DELETE' });
 
         if (resposta.ok || resposta.status === 204) {
             const linha = botao.closest('tr');
-
             linha.style.transition = 'opacity 0.4s ease';
             linha.style.opacity = '0';
 
             setTimeout(() => {
                 linha.remove();
-
                 const tbody = document.querySelector('table tbody');
                 if (tbody && tbody.children.length === 0) {
                     location.reload();
                 }
             }, 400);
 
+            showStylishAlert('🗑️ Presente removido com sucesso!', 'info');
         } else {
             const erroTxt = await resposta.text();
             throw new Error(erroTxt || 'Erro interno ao tentar excluir.');
         }
     } catch (erro) {
-        alert('Não foi possível excluir o presente: ' + erro.message);
+        showStylishAlert('Não foi possível excluir o presente: ' + erro.message, 'danger');
         botao.disabled = false;
         botao.textContent = '🗑️ Excluir';
     }
