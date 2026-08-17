@@ -12,7 +12,9 @@ public class WebSecurityConfig implements WebMvcConfigurer {
         registry.addMapping("/**")
                 .allowedOrigins(
                         "http://casamento-tuani-joao.com.br",
-                        "http://www.casamento-tuani-joao.com.br"
+                        "http://www.casamento-tuani-joao.com.br",
+                        "https://casamento-tuani-joao.com.br",
+                        "https://www.casamento-tuani-joao.com.br"
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
