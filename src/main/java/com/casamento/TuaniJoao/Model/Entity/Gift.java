@@ -30,5 +30,7 @@ public class Gift {
     @Column(name = "photo_url")
     private String photoUrl;
 
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private Boolean active = true;
 
 }

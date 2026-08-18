@@ -37,13 +37,10 @@ public class CasamentoController {
         return "painel-noivos-list-guests";
     }
 
-    /**
-     * 🛒 Rota para visualizar o Histórico de Presentes Comprados / Pedidos
-     */
     @GetMapping("/orders")
     public String verHistoricoPedidos(Model model) {
         model.addAttribute("orders", orderService.findAllOrders());
-        return "painel-noivos-list-orders"; // Aponta para o novo template que criaremos no Passo 2
+        return "painel-noivos-list-orders";
     }
 
 }
