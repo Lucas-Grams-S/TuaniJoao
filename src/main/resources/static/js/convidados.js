@@ -1,23 +1,11 @@
 let searchTimeout = null;
+let selectedGuests = new Map();
 
 function onSearchInputChange() {
     const nomeBusca = document.getElementById('searchGuestName').value.trim();
-    const feedback = document.getElementById('searchFeedback');
-    const container = document.getElementById('familyContainer');
-
-    if (nomeBusca.length < 3) {
-        feedback.classList.add('d-none');
-        container.classList.add('d-none');
-        return;
-    }
-
-    if (searchTimeout) {
-        clearTimeout(searchTimeout);
-    }
-
-    searchTimeout = setTimeout(() => {
-        buscarFamiliaVisual();
-    }, 400);
+    if (nomeBusca.length < 3) return;
+    if (searchTimeout) clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => buscarFamiliaVisual(), 400);
 }
 
 function buscarFamiliaVisual() {
@@ -27,7 +15,7 @@ function buscarFamiliaVisual() {
     const lista = document.getElementById('familyMembersList');
 
     feedback.classList.add('d-none');
-    container.classList.add('d-none');
+    if (selectedGuests.size === 0) container.classList.add('d-none');
 
     if (nomeBusca.length < 3) {
         feedback.innerText = "Por favor, digite pelo menos 3 letras do seu nome.";
@@ -50,25 +38,29 @@ function buscarFamiliaVisual() {
             }
 
             convidados.forEach(convidado => {
-                const checkedStr = convidado.isConfirmed ? "checked" : "";
+                if (convidado.isConfirmed && !selectedGuests.has(convidado.id)) {
+                                    selectedGuests.set(convidado.id, convidado.name);
+                }
+
+                 const isChecked = selectedGuests.has(convidado.id);
+                 const checkedStr = isChecked ? "checked" : "";
+
                 const html = `
-                    <div class="form-check form-switch mb-3 p-3 border rounded" style="background-color: var(--bg-light); border-color: var(--sage-green) !important;">
-                        <input class="form-check-input ms-0 me-3 rsvp-checkbox"
-                               type="checkbox"
-                               role="switch"
-                               id="convidado_${convidado.id}"
-                               value="${convidado.id}"
-                               ${checkedStr}
-                               style="transform: scale(1.3); cursor: pointer;">
-                        <label class="form-check-label fw-bold" for="convidado_${convidado.id}" style="cursor: pointer; padding-top: 2px;">
-                            ${convidado.name}
-                        </label>
-                    </div>
-                `;
-                lista.innerHTML += html;
-            });
+                                    <div class="form-check form-switch mb-3 p-3 border rounded" style="background-color: var(--bg-light); border-color: var(--sage-green) !important;">
+                                        <input class="form-check-input ms-0 me-3 rsvp-checkbox"
+                                               type="checkbox" role="switch"
+                                               id="convidado_${convidado.id}" value="${convidado.id}" ${checkedStr}
+                                               onchange="toggleGuest(${convidado.id}, '${convidado.name.replace(/'/g, "\\'")}', this.checked)"
+                                               style="transform: scale(1.3); cursor: pointer;">
+                                        <label class="form-check-label fw-bold" for="convidado_${convidado.id}" style="cursor: pointer; padding-top: 2px;">
+                                            ${convidado.name}
+                                        </label>
+                                    </div>`;
+                                lista.innerHTML += html;
+                            });
 
             container.classList.remove('d-none');
+            atualizarListaSelecionados();
         })
         .catch(error => {
             feedback.innerText = "Ocorreu um erro ao comunicar com o servidor. Tente novamente.";
@@ -76,13 +68,48 @@ function buscarFamiliaVisual() {
         });
 }
 
+function toggleGuest(id, name, isChecked) {
+    if (isChecked) {
+        selectedGuests.set(id, name);
+    } else {
+        selectedGuests.delete(id);
+    }
+    atualizarListaSelecionados();
+}
+
+function atualizarListaSelecionados() {
+    const badgeContainer = document.getElementById('selectedGuestsBadges');
+    if (!badgeContainer) return;
+
+    if (selectedGuests.size > 0) {
+        badgeContainer.innerHTML = Array.from(selectedGuests.entries()).map(([id, name]) =>
+            `<span class="badge bg-success me-2 mb-2 p-2 shadow-sm" style="font-size: 14px; display: inline-flex; align-items: center; gap: 8px;">
+                ✅ ${name}
+                <button type="button" class="btn-close btn-close-white" style="font-size: 10px; cursor: pointer;" aria-label="Remover" onclick="removerConvidadoDaMemoria(${id})"></button>
+            </span>`
+        ).join('');
+    } else {
+        badgeContainer.innerHTML = '<span class="text-muted small">Nenhum convidado selecionado.</span>';
+    }
+}
+
+function removerConvidadoDaMemoria(id) {
+    selectedGuests.delete(id);
+
+    atualizarListaSelecionados();
+
+    const checkboxVisivel = document.getElementById(`convidado_${id}`);
+    if (checkboxVisivel) {
+        checkboxVisivel.checked = false;
+    }
+}
+
 function salvarRsvpVisual() {
     const btn = document.getElementById('btnSalvarRsvp');
     btn.innerHTML = "⏳ Salvando...";
     btn.disabled = true;
 
-    const checkboxes = document.querySelectorAll('.rsvp-checkbox:checked');
-    const idsConfirmados = Array.from(checkboxes).map(cb => parseInt(cb.value));
+    const idsConfirmados = Array.from(selectedGuests.keys());
 
     if (idsConfirmados.length === 0) {
         alert("Por favor, marque pelo menos um nome para confirmar presença.");
@@ -99,15 +126,17 @@ function salvarRsvpVisual() {
     .then(response => {
         if (!response.ok) throw new Error('Falha ao registrar confirmação.');
 
-        const modal = new bootstrap.Modal(document.getElementById('modalSucessoRsvp'));
-        modal.show();
+        new bootstrap.Modal(document.getElementById('modalSucessoRsvp')).show();
 
         document.getElementById('searchGuestName').value = '';
+        document.getElementById('familyMembersList').innerHTML = '';
+
+        selectedGuests.clear();
+        atualizarListaSelecionados();
+
         document.getElementById('familyContainer').classList.add('d-none');
     })
-    .catch(error => {
-        alert('Aviso: ' + error.message);
-    })
+    .catch(error => alert('Aviso: ' + error.message))
     .finally(() => {
         btn.innerHTML = "Salvar Confirmações";
         btn.disabled = false;
