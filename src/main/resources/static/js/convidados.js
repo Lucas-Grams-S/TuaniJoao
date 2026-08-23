@@ -1,5 +1,5 @@
 let searchTimeout = null;
-let selectedGuests = new Map();
+let selectedGuests = new Set();
 
 function onSearchInputChange() {
     const nomeBusca = document.getElementById('searchGuestName').value.trim();
@@ -38,29 +38,24 @@ function buscarFamiliaVisual() {
             }
 
             convidados.forEach(convidado => {
-                if (convidado.isConfirmed && !selectedGuests.has(convidado.id)) {
-                                    selectedGuests.set(convidado.id, convidado.name);
-                }
-
-                 const isChecked = selectedGuests.has(convidado.id);
-                 const checkedStr = isChecked ? "checked" : "";
+                const isChecked = selectedGuests.has(convidado.id) || convidado.isConfirmed;
+                const checkedStr = isChecked ? "checked" : "";
 
                 const html = `
-                                    <div class="form-check form-switch mb-3 p-3 border rounded" style="background-color: var(--bg-light); border-color: var(--sage-green) !important;">
-                                        <input class="form-check-input ms-0 me-3 rsvp-checkbox"
-                                               type="checkbox" role="switch"
-                                               id="convidado_${convidado.id}" value="${convidado.id}" ${checkedStr}
-                                               onchange="toggleGuest(${convidado.id}, '${convidado.name.replace(/'/g, "\\'")}', this.checked)"
-                                               style="transform: scale(1.3); cursor: pointer;">
-                                        <label class="form-check-label fw-bold" for="convidado_${convidado.id}" style="cursor: pointer; padding-top: 2px;">
-                                            ${convidado.name}
-                                        </label>
-                                    </div>`;
-                                lista.innerHTML += html;
-                            });
+                    <div class="form-check form-switch mb-3 p-3 border rounded" style="background-color: var(--bg-light); border-color: var(--sage-green) !important;">
+                        <input class="form-check-input ms-0 me-3 rsvp-checkbox"
+                               type="checkbox" role="switch"
+                               id="convidado_${convidado.id}" value="${convidado.id}" ${checkedStr}
+                               onchange="toggleGuest(${convidado.id}, this.checked)"
+                               style="transform: scale(1.3); cursor: pointer;">
+                        <label class="form-check-label fw-bold" for="convidado_${convidado.id}" style="cursor: pointer; padding-top: 2px;">
+                            ${convidado.name}
+                        </label>
+                    </div>`;
+                lista.innerHTML += html;
+            });
 
             container.classList.remove('d-none');
-            atualizarListaSelecionados();
         })
         .catch(error => {
             feedback.innerText = "Ocorreu um erro ao comunicar com o servidor. Tente novamente.";
@@ -68,39 +63,11 @@ function buscarFamiliaVisual() {
         });
 }
 
-function toggleGuest(id, name, isChecked) {
+function toggleGuest(id, isChecked) {
     if (isChecked) {
-        selectedGuests.set(id, name);
+        selectedGuests.add(id);
     } else {
         selectedGuests.delete(id);
-    }
-    atualizarListaSelecionados();
-}
-
-function atualizarListaSelecionados() {
-    const badgeContainer = document.getElementById('selectedGuestsBadges');
-    if (!badgeContainer) return;
-
-    if (selectedGuests.size > 0) {
-        badgeContainer.innerHTML = Array.from(selectedGuests.entries()).map(([id, name]) =>
-            `<span class="badge bg-success me-2 mb-2 p-2 shadow-sm" style="font-size: 14px; display: inline-flex; align-items: center; gap: 8px;">
-                ✅ ${name}
-                <button type="button" class="btn-close btn-close-white" style="font-size: 10px; cursor: pointer;" aria-label="Remover" onclick="removerConvidadoDaMemoria(${id})"></button>
-            </span>`
-        ).join('');
-    } else {
-        badgeContainer.innerHTML = '<span class="text-muted small">Nenhum convidado selecionado.</span>';
-    }
-}
-
-function removerConvidadoDaMemoria(id) {
-    selectedGuests.delete(id);
-
-    atualizarListaSelecionados();
-
-    const checkboxVisivel = document.getElementById(`convidado_${id}`);
-    if (checkboxVisivel) {
-        checkboxVisivel.checked = false;
     }
 }
 
@@ -109,10 +76,10 @@ function salvarRsvpVisual() {
     btn.innerHTML = "⏳ Salvando...";
     btn.disabled = true;
 
-    const idsConfirmados = Array.from(selectedGuests.keys());
+    const idsConfirmados = Array.from(selectedGuests);
 
     if (idsConfirmados.length === 0) {
-        alert("Por favor, marque pelo menos um nome para confirmar presença.");
+        alert("Nenhuma nova confirmação foi selecionada. Marque as caixinhas para salvar.");
         btn.innerHTML = "Salvar Confirmações";
         btn.disabled = false;
         return;
@@ -132,8 +99,6 @@ function salvarRsvpVisual() {
         document.getElementById('familyMembersList').innerHTML = '';
 
         selectedGuests.clear();
-        atualizarListaSelecionados();
-
         document.getElementById('familyContainer').classList.add('d-none');
     })
     .catch(error => alert('Aviso: ' + error.message))
@@ -159,18 +124,14 @@ function abrirOpcoesDePagamento(giftId, price) {
 
 function escolherPix() {
     const giftId = document.getElementById('escolhaGiftId').value;
-
     bootstrap.Modal.getInstance(document.getElementById('modalEscolhaPagamento')).hide();
-
     abrirModalPix(giftId);
 }
 
 function escolherCartao() {
     const giftId = document.getElementById('escolhaGiftId').value;
     const price = document.getElementById('escolhaGiftPrice').value;
-
     bootstrap.Modal.getInstance(document.getElementById('modalEscolhaPagamento')).hide();
-
     abrirModalCartao(giftId, price);
 }
 
@@ -260,7 +221,6 @@ const renderCardPaymentBrick = async (amount) => {
     };
 
     if (cardPaymentBrickController) cardPaymentBrickController.unmount();
-
     cardPaymentBrickController = await bricksBuilder.create("cardPayment", "cardPaymentBrick_container", settings);
 };
 
